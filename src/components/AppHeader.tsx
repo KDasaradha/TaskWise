@@ -2,15 +2,19 @@
 
 import type { FC } from 'react';
 import Link from 'next/link';
-import { Zap } from 'lucide-react';
+import { Zap, PanelLeftClose, PanelLeftOpen } from 'lucide-react'; 
 import { motion } from 'framer-motion';
-import { SidebarTrigger } from '@/components/ui/sidebar'; // Import SidebarTrigger
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'; 
+import { Button } from '@/components/ui/button'; 
+import { cn } from '@/lib/utils'; // Added import for cn
 
 const AppHeader: FC = () => {
   const headerVariants = {
     hidden: { opacity: 0, y: -30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
   };
+
+  const { state: sidebarState, toggleSidebar, isMobile } = useSidebar();
 
   return (
     <motion.header
@@ -19,15 +23,32 @@ const AppHeader: FC = () => {
       variants={headerVariants}
       className="h-16 py-3 px-4 md:px-6 border-b border-border/30 shadow-sm sticky top-0 bg-background/80 dark:bg-slate-900/80 backdrop-blur-md z-40 flex items-center justify-between"
     >
-      <div className="flex items-center gap-4">
-        {/* Sidebar Trigger for mobile, hidden on md and larger screens where sidebar is persistent or icon-only */}
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Mobile Sidebar Trigger */}
         <div className="md:hidden">
           <SidebarTrigger />
         </div>
-        {/* App Logo/Title - only shown if sidebar is not expanded or on mobile when trigger is present */}
-        {/* This title can be conditionally shown based on sidebar state from useSidebar() if needed, for now always show */}
+
+        {/* Desktop Sidebar Toggle Button */}
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="text-foreground hover:bg-accent/10 h-9 w-9 rounded-full"
+            aria-label={sidebarState === 'expanded' ? 'Collapse sidebar' : 'Expand sidebar'}
+          >
+            {sidebarState === 'expanded' ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+          </Button>
+        )}
+        
+        {/* App Logo/Title - shown when sidebar is collapsed or if it's preferred to always show in header */}
+        {/* Conditionally show based on sidebar state if it's also in the sidebar header */}
         <motion.div
-            className="hidden md:flex items-center" /* Hide on mobile, sidebar header has title */
+            className={cn(
+              "items-center",
+              (!isMobile && sidebarState === 'expanded') ? "hidden md:flex" : "flex" // Show if mobile, or if desktop & sidebar collapsed
+            )}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
@@ -43,7 +64,7 @@ const AppHeader: FC = () => {
       
       <div className="flex items-center space-x-3">
         {/* Global actions like User Profile, Notifications can go here */}
-        {/* For now, it's empty as per the refactor */}
+        {/* For now, it's empty */}
       </div>
     </motion.header>
   );

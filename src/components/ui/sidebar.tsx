@@ -96,7 +96,7 @@ const SidebarProvider = React.forwardRef<
             document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
         }
       },
-      [setOpenProp, open]
+      [setOpenProp, open, _setOpen] // Added _setOpen to dependencies
     )
 
     React.useEffect(() => {
@@ -534,14 +534,14 @@ SidebarMenu.displayName = "SidebarMenu"
 const SidebarMenuItem = React.forwardRef<
   HTMLLIElement,
   React.ComponentPropsWithoutRef<"li"> & { asChild?: boolean }
->(({ className, asChild = false, children, ...props }, ref) => {
-  const Comp = asChild ? Slot : "li";
+>(({ className, asChild: isSlot = false, children, ...rest }, ref) => {
+  const Comp = isSlot ? Slot : "li";
   return (
     <Comp
       ref={ref}
       className={cn("group/menu-item relative", className)}
       data-sidebar="menu-item"
-      {...props}
+      {...rest}
     >
       {children}
     </Comp>
@@ -583,19 +583,19 @@ const SidebarMenuButton = React.forwardRef<
 >(
   (
     {
-      asChild = false,
+      asChild: isSlot = false,
       isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
       children, // Added children to pass icon and text
-      ...props
+      ...rest // Use rest for remaining props
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button"
-    const { isMobile, state: sidebarState, open: sidebarOpen } = useSidebar() // Get sidebar state
+    const Comp = isSlot ? Slot : "button"
+    const { isMobile, state: sidebarState } = useSidebar() // Get sidebar state, removed 'open' as 'state' is preferred
 
 
     const buttonElement = (
@@ -605,7 +605,7 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive} // Pass active state for styling
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        {...props}
+        {...rest} // Spread rest
       >
         {children}
       </Comp>
