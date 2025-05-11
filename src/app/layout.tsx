@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { SiteSidebar } from '@/components/SiteSidebar';
 import AppHeader from '@/components/AppHeader';
+import { cn } from '@/lib/utils';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,13 +29,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground dark:bg-gray-900 dark:text-gray-100`}>
+      <body 
+        className={cn(
+          geistSans.variable, 
+          geistMono.variable, 
+          "font-sans antialiased bg-background text-foreground dark:bg-background" 
+        )}
+      >
         <SidebarProvider defaultOpen={true}>
           <div className="flex min-h-screen">
             <SiteSidebar />
-            <div className="flex flex-col flex-grow md:peer-data-[state=expanded]:peer-data-[variant=sidebar]:ml-[var(--sidebar-width)] peer-data-[state=collapsed]:peer-data-[variant=sidebar]:ml-[var(--sidebar-width-icon)] transition-[margin-left] duration-300 ease-in-out">
+            <div 
+              className={cn(
+                "flex flex-col flex-grow transition-[margin-left] duration-300 ease-in-out",
+                "md:peer-data-[state=expanded]:peer-data-[variant=sidebar]:ml-[var(--sidebar-width)]",
+                "md:peer-data-[state=collapsed]:peer-data-[variant=sidebar]:ml-[var(--sidebar-width-icon)]"
+              )}
+            >
               <AppHeader />
-              <main className="flex-grow p-4 md:p-6 lg:p-8 overflow-y-auto">
+              <main className="flex-grow p-4 sm:p-6 md:p-8 overflow-y-auto"> 
                 {children}
               </main>
             </div>

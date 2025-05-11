@@ -10,27 +10,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button'; 
 import { cn } from '@/lib/utils'; 
-import { AlertTriangle, CheckCircle2, Loader2, ListChecks, Hourglass, Activity, CalendarClock } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ListChecks, Hourglass, Activity, CalendarClock, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const StatCard: FC<{ title: string; value: number | string; icon: React.ReactNode; description?: string, colorClass?: string }> = ({ title, value, icon, description, colorClass = "text-primary" }) => (
+const StatCard: FC<{ title: string; value: string | number; icon: React.ReactNode; description?: string, colorClass?: string, cardClass?: string }> = 
+({ title, value, icon, description, colorClass = "text-primary", cardClass }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
+    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.4, ease: "circOut" }}
   >
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-primary rounded-xl overflow-hidden bg-card/80 backdrop-blur-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={cn("h-6 w-6", colorClass)}>{icon}</div>
+    <Card 
+        className={cn(
+            "shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl overflow-hidden",
+            "bg-card/80 dark:bg-card/70 backdrop-blur-sm border-border/40",
+            cardClass 
+        )}
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-4 px-4">
+        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</CardTitle>
+        <div className={cn("h-5 w-5", colorClass)}>{icon}</div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0 pb-4 px-4">
         <div className="text-3xl font-bold text-foreground">{value}</div>
-        {description && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
+        {description && <p className="text-xs text-muted-foreground pt-0.5">{description}</p>}
       </CardContent>
     </Card>
   </motion.div>
@@ -90,122 +97,126 @@ const DashboardPage = () => {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+      transition: { staggerChildren: 0.08, delayChildren: 0.15 },
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  const itemVariants = { 
+    hidden: { opacity: 0, x: -10 },
+    visible: (i: number) => ({ 
+      opacity: 1, 
+      x: 0, 
+      transition: { delay: i * 0.05, duration:0.3, ease:"easeOut" } 
+    }),
   };
   
-  const getStatusBadgeVariant = (status: TaskStatus): "default" | "secondary" | "outline" | "destructive" | null | undefined => {
+  const getStatusBadgeStyle = (status: TaskStatus): string => {
     switch (status) {
-      case TaskStatus.Pending: return "secondary";
-      case TaskStatus.InProgress: return "default";
-      case TaskStatus.Completed: return "outline"; 
-      default: return "secondary";
+      case TaskStatus.Pending: return "bg-yellow-100/80 text-yellow-700 border-yellow-300/70 dark:bg-yellow-700/20 dark:text-yellow-300 dark:border-yellow-600/50";
+      case TaskStatus.InProgress: return "bg-blue-100/80 text-primary border-blue-300/70 dark:bg-primary/20 dark:text-blue-300 dark:border-primary/50";
+      case TaskStatus.Completed: return "bg-green-100/70 text-green-700 border-green-400/70 dark:bg-green-700/20 dark:text-green-300 dark:border-green-600/50";
+      default: return "bg-muted text-muted-foreground border-border";
     }
   };
 
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 md:px-8 py-8">
+      <div className="w-full space-y-8">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold tracking-tight text-foreground mb-8"
+          transition={{ duration: 0.4 }}
+          className="text-3xl font-bold tracking-tight text-foreground"
         >
           Dashboard
         </motion.h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl bg-card/70" />)}
         </div>
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-72 rounded-xl bg-card/70" />
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-gradient-to-br from-background via-secondary/10 to-background dark:from-gray-900 dark:via-gray-800/20 dark:to-gray-900 py-8 px-4 sm:px-6 lg:px-0"> {/* Adjusted padding */}
+    <div className="w-full space-y-10"> 
       <motion.h1
-        initial={{ opacity: 0, y: -30 }}
+        initial={{ opacity: 0, y: -25 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "circOut" }}
-        className="text-4xl font-extrabold tracking-tighter text-foreground mb-10 pb-2 border-b-2 border-primary/30"
+        transition={{ duration: 0.5, ease: "circOut" }}
+        className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground pb-1"
       >
-        Task Dashboard
+        Task <span className="text-gradient-primary">Overview</span>
       </motion.h1>
 
       <motion.div 
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10"
+        className="grid gap-5 md:grid-cols-2 lg:grid-cols-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <StatCard title="Total Tasks" value={taskStats.total} icon={<ListChecks />} description={`${taskStats.completed} completed`} />
-        <StatCard title="Pending" value={taskStats.pending} icon={<Hourglass />} colorClass="text-yellow-500" description="Awaiting action" />
-        <StatCard title="In Progress" value={taskStats.inProgress} icon={<Activity />} colorClass="text-blue-500" description="Currently active" />
-        <StatCard title="Completed" value={taskStats.completed} icon={<CheckCircle2 />} colorClass="text-green-500" description="Successfully finished" />
+        <StatCard title="Total Tasks" value={taskStats.total} icon={<ListChecks size={20}/>} description={`${taskStats.completed} completed`} cardClass="border-l-4 border-primary/80"/>
+        <StatCard title="Pending" value={taskStats.pending} icon={<Hourglass size={20}/>} colorClass="text-yellow-500 dark:text-yellow-400" description="Awaiting action" cardClass="border-l-4 border-yellow-500/70"/>
+        <StatCard title="In Progress" value={taskStats.inProgress} icon={<Activity size={20}/>} colorClass="text-blue-500 dark:text-blue-400" description="Currently active" cardClass="border-l-4 border-blue-500/70"/>
+        <StatCard title="Completed" value={taskStats.completed} icon={<CheckCircle2 size={20}/>} colorClass="text-green-500 dark:text-green-400" description="Successfully finished" cardClass="border-l-4 border-green-500/70"/>
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 25 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3, ease: "circOut" }}
+        transition={{ duration: 0.5, delay: 0.2, ease: "circOut" }}
       >
-        <Card className="shadow-xl rounded-2xl overflow-hidden border-none bg-card/70 dark:bg-slate-800/70 backdrop-blur-lg">
-          <CardHeader className="border-b border-border/20 dark:border-slate-700/30">
-            <div className="flex items-center space-x-3">
-                <CalendarClock className="h-7 w-7 text-accent" />
+        <Card className="shadow-xl rounded-xl overflow-hidden border-none bg-card/80 dark:bg-card/70 backdrop-blur-md">
+          <CardHeader className="px-5 py-4 border-b border-border/30 dark:border-border/25">
+            <div className="flex items-center space-x-2.5">
+                <CalendarClock className="h-5 w-5 text-accent" />
                 <div>
-                    <CardTitle className="text-xl font-semibold text-foreground dark:text-slate-100">Recently Updated Tasks</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground dark:text-slate-400">Top 5 tasks with recent activity.</CardDescription>
+                    <CardTitle className="text-md font-semibold text-foreground dark:text-slate-100">Recently Updated Tasks</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground dark:text-slate-400">Top 5 tasks with recent activity.</CardDescription>
                 </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             {recentlyUpdatedTasks.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
+              <div className="p-6 text-center text-muted-foreground">
                  <Image 
-                    src="https://picsum.photos/seed/empty_recent_tasks/300/200" 
+                    src="https://picsum.photos/seed/dashboard_empty_recent/300/180" 
                     alt="No recent tasks" 
                     width={300} 
-                    height={200} 
-                    className="mx-auto mb-4 rounded-lg shadow-md opacity-75"
-                    data-ai-hint="empty tasks"
+                    height={180} 
+                    className="mx-auto mb-4 rounded-lg shadow-md opacity-80"
+                    data-ai-hint="recent empty"
                   />
-                <p className="text-lg">No tasks have been updated recently.</p>
-                <p className="text-sm">
-                  <Link href="/" className="text-primary hover:underline">Manage your tasks</Link> to see updates here.
+                <p className="text-md">No tasks have been updated recently.</p>
+                <p className="text-xs mt-1">
+                  <Link href="/" className="text-primary hover:underline font-medium">Manage your tasks</Link> to see updates here.
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-muted/20 dark:bg-slate-700/40">
-                    <TableRow className="border-b border-border/30">
-                      <TableHead className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Title</TableHead>
-                      <TableHead className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</TableHead>
-                      <TableHead className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Last Updated</TableHead>
-                      <TableHead className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground text-right">Due Date</TableHead>
+                  <TableHeader className="bg-muted/10 dark:bg-muted/20">
+                    <TableRow className="border-b border-border/30 dark:border-border/25">
+                      <TableHead className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</TableHead>
+                      <TableHead className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+                      <TableHead className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last Updated</TableHead>
+                      <TableHead className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Due Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {recentlyUpdatedTasks.map((task, index) => (
                       <motion.tr 
                         key={task.id}
+                        custom={index}
                         variants={itemVariants} 
                         initial="hidden" 
                         animate="visible" 
-                        custom={index} 
-                        className="border-b border-border/20 dark:border-slate-700/50 hover:bg-muted/50 dark:hover:bg-slate-800/40 transition-colors"
+                        className="border-b border-border/20 dark:border-border/50 hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors"
                       >
-                        <TableCell className="font-medium px-4 py-3 text-foreground dark:text-slate-200">{task.task_title}</TableCell>
+                        <TableCell className="font-medium px-4 py-3 text-sm text-foreground dark:text-slate-200">{task.task_title}</TableCell>
                         <TableCell className="px-4 py-3">
-                          <Badge variant={getStatusBadgeVariant(task.task_status)} className="capitalize text-xs">
+                          <Badge variant={"outline"} className={cn("capitalize text-[0.7rem] py-0.5 px-2 font-normal", getStatusBadgeStyle(task.task_status))}>
                             {task.task_status.replace('_', ' ')}
                           </Badge>
                         </TableCell>
@@ -213,7 +224,7 @@ const DashboardPage = () => {
                           {formatDistanceToNow(new Date(task.last_updated_on), { addSuffix: true })}
                         </TableCell>
                         <TableCell className="text-xs px-4 py-3 text-muted-foreground dark:text-slate-400 text-right">
-                          {task.task_due_date ? format(new Date(task.task_due_date), 'MMM dd, yyyy') : 'Not set'}
+                          {task.task_due_date ? format(new Date(task.task_due_date), 'dd MMM, yyyy') : <span className="italic">Not set</span>}
                         </TableCell>
                       </motion.tr>
                     ))}
@@ -225,14 +236,24 @@ const DashboardPage = () => {
         </Card>
       </motion.div>
        <motion.div 
-        className="mt-12 text-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
+        className="mt-10 text-center"
+        initial={{ opacity: 0, y:15 }}
+        animate={{ opacity: 1, y:0 }}
+        transition={{ delay: 0.4, duration: 0.4, ease:"easeOut" }}
       >
-        <Link href="/">
-          <Button variant="outline" className="rounded-lg border-primary/50 hover:border-primary hover:bg-primary/10 transition-all duration-300">
-            View All Tasks
+        <Link href="/" passHref>
+          <Button 
+            variant="outline" 
+            className={cn(
+                "rounded-lg border-primary/60 hover:border-primary hover:bg-primary/10 text-primary",
+                "px-6 py-2.5 text-sm font-medium transition-all duration-200 group"
+            )}
+            as={motion.button}
+            whileHover={{ scale: 1.03, y:-1, boxShadow: "0px 3px 10px hsla(var(--primary-rgb),0.1)"}}
+            whileTap={{ scale: 0.97}}
+            transition={{type:"spring", stiffness:300, damping:15}}
+          >
+            <Eye className="mr-2 h-4 w-4 group-hover:text-primary transition-colors" /> View All Tasks
           </Button>
         </Link>
       </motion.div>

@@ -4,132 +4,141 @@
 
 @layer base {
   :root {
-    --background: 204 17% 93%; /* Light Grey - #ecf0f1 */
-    --foreground: 210 20% 25%; /* Dark Grey text */
+    --background: 204 20% 96%; /* Lighter, cleaner background */
+    --foreground: 210 25% 20%; /* Deep, readable text */
 
-    --muted: 204 17% 90%;
-    --muted-foreground: 210 20% 45%; /* Lighter Grey text */
+    --muted: 204 18% 90%;
+    --muted-foreground: 210 22% 40%; 
 
-    --popover: 204 17% 98%; /* Slightly whiter for popovers */
-    --popover-foreground: 210 20% 25%;
+    --popover: 204 20% 99%; 
+    --popover-foreground: 210 25% 20%;
 
-    --card: 204 17% 96%; /* Slightly whiter for cards */
-    --card-foreground: 210 20% 25%;
+    --card: 204 20% 98%; 
+    --card-foreground: 210 25% 20%;
 
-    --border: 204 17% 80%;
-    --input: 204 17% 85%; /* Input background slightly different */
+    --border: 204 15% 85%; /* Softer borders */
+    --input: 204 15% 92%; 
 
-    --primary: 207 68% 53%; /* Clean Blue - #3498db */
-    --primary-foreground: 0 0% 98%; /* White text for blue */
+    --primary: 207 70% 55%; /* Slightly more vibrant blue */
+    --primary-foreground: 0 0% 100%; 
+    --primary-rgb: 52, 152, 219; /* For RGBA shadows if needed */
 
-    --secondary: 204 17% 88%; /* Slightly darker grey for secondary elements */
-    --secondary-foreground: 210 20% 25%;
 
-    --accent: 28 80% 52%; /* Orange - #e67e22 */
-    --accent-foreground: 0 0% 98%; /* White text for orange */
+    --secondary: 204 18% 88%; 
+    --secondary-foreground: 210 25% 20%;
 
-    --destructive: 0 84.2% 60.2%; /* Red for destructive actions */
-    --destructive-foreground: 0 0% 98%;
+    --accent: 30 85% 55%; /* Brighter, more engaging orange */
+    --accent-foreground: 0 0% 100%;
+    --accent-rgb: 230, 126, 34; /* For RGBA shadows if needed */
 
-    --ring: 207 68% 53%; /* Blue for focus rings */
 
-    --radius: 0.75rem; /* Slightly larger radius for modern feel */
+    --destructive: 0 75% 55%; 
+    --destructive-foreground: 0 0% 100%;
 
-    /* Chart Colors */
-    --chart-1: 48 96% 58%; 
-    --chart-2: 207 68% 53%; 
-    --chart-3: 145 63% 49%; 
-    --chart-4: 262 74% 66%; 
-    --chart-5: 173 58% 50%;
+    --ring: 207 70% 55%; 
 
-    /* Sidebar variables */
-    --sidebar-background: 204 10% 97%; /* Lighter than main background */
-    --sidebar-foreground: 210 20% 30%;
-    --sidebar-border: 204 10% 85%;
-    --sidebar-accent: 207 68% 53%; /* Primary color as accent */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-ring: 207 68% 53%; /* Primary color for ring */
+    --radius: 0.8rem; /* Consistent, modern radius */
+
+    /* Chart Colors - ensure good contrast and visual appeal */
+    --chart-1: 45 95% 60%;  /* Vivid Yellow */
+    --chart-2: 207 70% 55%; /* Primary Blue */
+    --chart-3: 140 60% 50%; /* Kelly Green */
+    --chart-4: 260 70% 65%; /* Soft Purple */
+    --chart-5: 170 60% 50%; /* Seafoam Green */
+
+    /* Sidebar variables - ensuring harmony */
+    --sidebar-background: 204 15% 94%; 
+    --sidebar-foreground: 210 25% 25%;
+    --sidebar-border: 204 15% 88%;
+    --sidebar-accent: 207 70% 55%; 
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-ring: 207 70% 55%; 
   }
 
   .dark {
-    --background: 210 20% 10%; 
-    --foreground: 204 17% 88%; 
+    --background: 210 22% 12%; 
+    --foreground: 204 18% 90%; 
 
-    --muted: 210 20% 15%;
-    --muted-foreground: 204 17% 65%;
+    --muted: 210 20% 18%;
+    --muted-foreground: 204 18% 70%;
 
-    --popover: 210 20% 12%; 
-    --popover-foreground: 204 17% 88%;
+    --popover: 210 22% 15%; 
+    --popover-foreground: 204 18% 90%;
 
-    --card: 210 20% 14%; 
-    --card-foreground: 204 17% 88%;
+    --card: 210 22% 16%; 
+    --card-foreground: 204 18% 90%;
 
-    --border: 210 20% 25%; 
-    --input: 210 20% 20%;  
+    --border: 210 18% 30%; 
+    --input: 210 18% 25%;  
 
-    --primary: 207 68% 53%; 
-    --primary-foreground: 0 0% 98%;
+    --primary: 207 70% 60%; /* Slightly lighter blue for dark mode */
+    --primary-foreground: 0 0% 100%;
+    --primary-rgb: 74, 162, 223;
 
-    --secondary: 210 20% 22%;
-    --secondary-foreground: 0 0% 98%;
 
-    --accent: 28 80% 52%; 
-    --accent-foreground: 0 0% 98%;
+    --secondary: 210 20% 25%;
+    --secondary-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 50%; 
-    --destructive-foreground: 0 0% 98%;
+    --accent: 30 85% 60%; /* Slightly lighter orange for dark mode */
+    --accent-foreground: 0 0% 100%;
+     --accent-rgb: 235, 136, 44;
 
-    --ring: 207 68% 53%;
 
-    /* Dark Chart Colors */
-    --chart-1: 48 90% 65%; 
+    --destructive: 0 70% 58%; 
+    --destructive-foreground: 0 0% 100%;
+
+    --ring: 207 70% 60%;
+
+    /* Dark Chart Colors - ensure good contrast */
+    --chart-1: 45 90% 68%; 
     --chart-2: 207 70% 60%;
-    --chart-3: 145 60% 55%;
-    --chart-4: 262 70% 70%;
-    --chart-5: 173 55% 58%;
+    --chart-3: 140 55% 60%;
+    --chart-4: 260 65% 70%;
+    --chart-5: 170 55% 58%;
 
     /* Dark Sidebar variables */
-    --sidebar-background: 210 20% 8%; /* Darker sidebar background */
-    --sidebar-foreground: 204 17% 80%;
-    --sidebar-border: 210 20% 20%;
-    --sidebar-accent: 207 68% 53%; /* Primary color as accent */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-ring: 207 68% 53%;
+    --sidebar-background: 210 22% 10%; 
+    --sidebar-foreground: 204 18% 85%;
+    --sidebar-border: 210 18% 22%;
+    --sidebar-accent: 207 70% 60%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-ring: 207 70% 60%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-150; /* Smooth color transitions */
   }
   body {
     @apply bg-background text-foreground antialiased;
-    /* Apply custom scrollbar styling */
-    scrollbar-width: thin; /* For Firefox */
-    scrollbar-color: hsl(var(--primary)) hsl(var(--background)); /* For Firefox: thumb track */
+    scrollbar-width: thin; 
+    scrollbar-color: hsl(var(--primary)) hsl(var(--background)); 
   }
 
-  /* Custom scrollbar for WebKit browsers (Chrome, Safari, Edge) */
   body::-webkit-scrollbar {
-    @apply w-2 h-2;
+    @apply w-2.5 h-2.5; /* Slightly thicker scrollbar */
   }
   body::-webkit-scrollbar-track {
     @apply bg-background rounded-md;
   }
   body::-webkit-scrollbar-thumb {
-    @apply bg-primary rounded-md border-2 border-transparent bg-clip-content;
+    @apply bg-primary/70 rounded-md border-2 border-transparent bg-clip-content;
   }
   body::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary/80;
+    @apply bg-primary;
   }
 }
 
-/* Utility class for glassmorphism effect */
 @layer utilities {
   .glassmorphism {
-    @apply bg-opacity-50 backdrop-blur-lg border border-white/20 shadow-lg;
+    @apply bg-opacity-60 backdrop-blur-lg border border-white/10 shadow-xl; /* Adjusted opacity and border */
   }
   .dark .glassmorphism {
-     @apply bg-opacity-30 border-white/10; /* Adjust for dark mode */
+     @apply bg-opacity-40 border-white/5; 
+  }
+
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 }

@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-// AppHeader is now part of the global layout, so it's not imported here directly for rendering in this page component.
-// import AppHeader from '@/components/AppHeader'; 
 import TaskList from '@/components/TaskList';
 import TaskFormDialog, { TaskFormData } from '@/components/TaskFormDialog';
 import SmartSuggestionsSection from '@/components/SmartSuggestionsSection';
 import { Task, TaskStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button'; // Import Button
-import { Search, AlertTriangle, CircleCheck, PlusCircle, Lightbulb } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, AlertTriangle, CheckCircle, PlusCircle, Lightbulb, Loader2 as LoaderIcon } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +23,8 @@ import axiosInstance from '@/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -41,10 +41,9 @@ export default function Home() {
   const { toast } = useToast();
 
   const mainContainerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null); 
   const taskListRef = useRef<HTMLDivElement>(null);
   const smartSuggestionsRef = useRef<HTMLDivElement>(null);
-  // Footer is now part of global layout, not managed here
 
   const fetchTasks = useCallback(async () => {
     setIsLoadingTasks(true);
@@ -79,26 +78,25 @@ export default function Home() {
   }, [fetchTasks]);
 
   useEffect(() => {
-    if (mainContainerRef.current && !isLoadingTasks) { // Ensure animations run after loading
+    if (mainContainerRef.current && !isLoadingTasks) { 
       gsap.fromTo(mainContainerRef.current, 
-        { opacity: 0, y: 30 }, 
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.1 }
+        { opacity: 0, y: 20 }, 
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", delay: 0.1 }
       );
 
-      if (searchInputRef.current) {
-        gsap.fromTo(searchInputRef.current,
-          { opacity: 0, scale: 0.9 },
+      if (controlsRef.current) {
+        gsap.fromTo(controlsRef.current.children,
+          { opacity: 0, y: -15, scale: 0.98 },
           {
-            opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)",
+            opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.4)", stagger: 0.1,
             scrollTrigger: {
-              trigger: searchInputRef.current,
-              start: "top 90%", 
-              toggleActions: "play none none none" 
+              trigger: controlsRef.current,
+              start: "top 95%", 
+              toggleActions: "play none none reset" 
             }
           }
         );
       }
-      // Footer animation is removed as footer is global now
     }
   }, [isLoadingTasks]); 
 
@@ -133,7 +131,8 @@ export default function Home() {
       toast({ 
         title: editingTask ? 'Task Updated' : 'Task Added', 
         description: successMessage,
-        icon: <CircleCheck className="h-5 w-5 text-green-500" />
+        variant: 'success', 
+        icon: <CheckCircle className="h-5 w-5" /> 
       });
       fetchTasks(); 
       handleCloseForm();
@@ -163,7 +162,8 @@ export default function Home() {
         toast({ 
           title: 'Task Deleted', 
           description: `Task "${task?.task_title}" has been removed.`, 
-          icon: <CircleCheck className="h-5 w-5 text-primary" /> 
+          variant: 'success', 
+          icon: <CheckCircle className="h-5 w-5" /> 
         });
         fetchTasks(); 
       } catch (error: any) {
@@ -200,7 +200,8 @@ export default function Home() {
         toast({ 
           title: 'Suggested Task Added', 
           description: `"${newTaskPayload.task_title}" has been added.`,
-          icon: <CircleCheck className="h-5 w-5 text-green-500" /> 
+          variant: 'success',
+          icon: <CheckCircle className="h-5 w-5" /> 
         });
         fetchTasks(); 
     } catch (error: any) {
@@ -219,6 +220,11 @@ export default function Home() {
 
   const toggleSmartSuggestions = () => {
     setIsSmartSuggestionsVisible(prev => !prev);
+     if (!isSmartSuggestionsVisible && smartSuggestionsRef.current) {
+      setTimeout(() => {
+        smartSuggestionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
   };
 
   const filteredTasks = tasks.filter(
@@ -227,53 +233,61 @@ export default function Home() {
       (task.task_description && task.task_description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
-  const buttonVariants = {
-    hover: { scale: 1.05, transition: { duration: 0.2 } },
-    tap: { scale: 0.95 },
+  const buttonMotionProps = {
+    whileHover: { scale: 1.03, y: -1, boxShadow: "0px 4px 12px hsla(var(--primary-rgb), 0.1)" },
+    whileTap: { scale: 0.97, y: 0 },
+    transition: { type: "spring", stiffness: 400, damping: 15 }
   };
 
   return (
-    // Removed min-h-screen and flex-col as these are handled by RootLayout
-    // Removed AppHeader as it's part of RootLayout
-    <div ref={mainContainerRef} className="w-full"> {/* Use mainContainerRef for GSAP page load animation */}
-      {/* Page-specific header actions */}
+    <div ref={mainContainerRef} className="w-full space-y-8"> 
       <motion.div 
-        className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        ref={controlsRef}
+        className="flex flex-col sm:flex-row items-center justify-between gap-4 p-1" 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }}
       >
-        <div ref={searchInputRef} className="relative w-full sm:max-w-md">
+        <div className="relative w-full sm:max-w-lg"> 
           <Input
             type="text"
-            placeholder="Search tasks by title or description..."
+            placeholder="Search tasks by title, description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 text-base py-6 rounded-xl shadow-lg border-border/50 focus-visible:ring-primary focus-visible:ring-2 bg-card/80 backdrop-blur-sm"
+            className={cn(
+                "pl-12 text-base py-3 rounded-xl shadow-lg border-border/60 focus-visible:ring-primary focus-visible:ring-2",
+                "bg-card/90 dark:bg-card/70 backdrop-blur-sm placeholder:text-muted-foreground/80"
+            )}
             aria-label="Search tasks"
           />
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         </div>
 
-        <div className="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto justify-end">
-            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+        <div className="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto justify-end shrink-0">
+            <motion.div {...buttonMotionProps}>
               <Button 
                 onClick={toggleSmartSuggestions} 
                 variant="outline" 
                 disabled={isSuggestingTasksLoading} 
-                className="rounded-lg shadow-sm border-accent/50 hover:border-accent hover:bg-accent/10 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-12 sm:h-auto"
+                className={cn(
+                    "rounded-lg shadow-md border-accent/70 hover:border-accent hover:bg-accent/10 text-accent",
+                    "text-xs sm:text-sm px-3 sm:px-4 py-2 h-11 sm:h-auto transition-all duration-200"
+                )}
               >
-                <Lightbulb className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+                {isSuggestingTasksLoading ? <LoaderIcon className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : <Lightbulb className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
                 {isSuggestingTasksLoading ? 'Thinking...' : 'Smart Suggest'}
               </Button>
             </motion.div>
 
-            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+            <motion.div {...buttonMotionProps}>
               <Button 
                 onClick={() => handleOpenForm()} 
-                className="rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-12 sm:h-auto"
+                className={cn(
+                    "rounded-lg shadow-md hover:shadow-lg text-primary-foreground",
+                    "bg-primary hover:bg-primary/90", 
+                    "text-xs sm:text-sm px-3 sm:px-4 py-2 h-11 sm:h-auto transition-all duration-200"
+                )}
               >
-                <PlusCircle className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <PlusCircle className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 Add Task
               </Button>
             </motion.div>
@@ -283,13 +297,11 @@ export default function Home() {
 
       <div ref={taskListRef}>
         {isLoadingTasks ? (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-10 text-muted-foreground text-lg"
-          >
-            Loading tasks...
-          </motion.div>
+          <div className="space-y-4 pt-4">
+            {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-xl bg-card/80 dark:bg-card/60" />
+            ))}
+          </div>
         ) : (
           <TaskList
             tasks={filteredTasks}
@@ -303,11 +315,11 @@ export default function Home() {
         {isSmartSuggestionsVisible && (
           <motion.div
             ref={smartSuggestionsRef}
-            initial={{ opacity: 0, height: 0, y: 50 }}
+            initial={{ opacity: 0, height: 0, y: 30 }}
             animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: 30 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            className="overflow-hidden mt-8" // Added margin top
+            exit={{ opacity: 0, height: 0, y: 20 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="overflow-hidden mt-6" 
           >
             <SmartSuggestionsSection
               existingTasks={tasks}
@@ -318,53 +330,45 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isFormOpen && (
-          <TaskFormDialog
-            isOpen={isFormOpen}
-            onClose={handleCloseForm}
-            onSubmit={handleFormSubmit}
-            initialData={editingTask}
-          />
-        )}
-      </AnimatePresence>
-
+      <TaskFormDialog
+        isOpen={isFormOpen}
+        onClose={handleCloseForm}
+        onSubmit={handleFormSubmit}
+        initialData={editingTask}
+      />
+      
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
-        <AlertDialogContent className="bg-card shadow-2xl rounded-xl border-border/50">
+        <AlertDialogContent className="bg-card shadow-2xl rounded-xl border-border/50 glassmorphism">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-semibold text-foreground">Are you sure you want to delete this task?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-semibold text-foreground">Are you sure?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              This action cannot be undone. This will permanently delete the task
-              "{tasks.find(t => t.id === taskToDelete)?.task_title}".
+              This will permanently delete the task: "{tasks.find(t => t.id === taskToDelete)?.task_title || 'Selected Task'}". This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4">
+          <AlertDialogFooter className="mt-5 gap-2 sm:gap-3">
             <AlertDialogCancel 
               asChild
-              onClick={() => setTaskToDelete(null)}
             >
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+                {...buttonMotionProps}
+                onClick={() => setTaskToDelete(null)} 
+                className="px-5 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
               >
                 Cancel
               </motion.button>
             </AlertDialogCancel>
-            <AlertDialogAction asChild onClick={confirmDeleteTask}>
+            <AlertDialogAction asChild >
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                {...buttonMotionProps}
+                onClick={confirmDeleteTask} 
+                className="px-5 py-2.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors text-sm font-medium"
               >
-                Delete
+                Delete Task
               </motion.button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      {/* Footer is now global and removed from here */}
     </div>
   );
 }
