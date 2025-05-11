@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AppHeader from '@/components/AppHeader';
 import TaskList from '@/components/TaskList';
 import TaskFormDialog, { TaskFormData } from '@/components/TaskFormDialog';
@@ -20,46 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-
-const initialTasks: Task[] = [
-  {
-    id: '1',
-    task_title: 'Setup project environment',
-    task_description: 'Initialize Next.js, install dependencies, configure Tailwind.',
-    task_due_date: new Date(new Date().setDate(new Date().getDate() + 2)),
-    task_status: TaskStatus.Completed,
-    task_remarks: 'All set up!',
-    created_on: new Date(new Date().setDate(new Date().getDate() - 3)),
-    last_updated_on: new Date(new Date().setDate(new Date().getDate() - 2)),
-    created_by: 'Dev Team',
-    last_updated_by: 'Dev Team',
-  },
-  {
-    id: '2',
-    task_title: 'Develop Task List UI',
-    task_description: 'Create component to display tasks in a table with sorting and filtering.',
-    task_due_date: new Date(new Date().setDate(new Date().getDate() + 5)),
-    task_status: TaskStatus.InProgress,
-    task_remarks: 'Working on responsiveness.',
-    created_on: new Date(new Date().setDate(new Date().getDate() - 1)),
-    last_updated_on: new Date(),
-    created_by: 'Frontend Lead',
-    last_updated_by: 'Frontend Lead',
-  },
-  {
-    id: '3',
-    task_title: 'Implement Task Creation Logic',
-    task_description: 'Build form and backend endpoint for adding new tasks.',
-    task_due_date: new Date(new Date().setDate(new Date().getDate() + 7)),
-    task_status: TaskStatus.Pending,
-    task_remarks: '',
-    created_on: new Date(),
-    last_updated_on: new Date(),
-    created_by: 'Backend Dev',
-    last_updated_by: 'Backend Dev',
-  },
-];
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -67,37 +28,40 @@ export default function Home() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSmartSuggestionsVisible, setIsSmartSuggestionsVisible] = useState(false);
-  const [isSuggestingTasksLoading, setIsSuggestingTasksLoading] = useState(false);
+  const [isSuggestingTasksLoading, setIsSuggestingTasksLoading] = useState(false); // This seems to be for the AI button itself
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
   const { toast } = useToast();
 
-  // Effect to load tasks from localStorage or use initialTasks
-  useEffect(() => {
-    const storedTasks = localStorage.getItem('taskwise-tasks');
-    if (storedTasks) {
-      try {
-        const parsedTasks = JSON.parse(storedTasks).map((task: any) => ({
-          ...task,
-          task_due_date: task.task_due_date ? new Date(task.task_due_date) : null,
-          created_on: new Date(task.created_on),
-          last_updated_on: new Date(task.last_updated_on),
-        }));
-        setTasks(parsedTasks);
-      } catch (error) {
-        console.error("Failed to parse tasks from localStorage", error);
-        setTasks(initialTasks); // Fallback to initial if parsing fails
+  const fetchTasks = useCallback(async () => {
+    setIsLoadingTasks(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks`);
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Error response from server:", errorData);
+        throw new Error(`Failed to fetch tasks. Status: ${response.status}`);
       }
-    } else {
-      setTasks(initialTasks);
+      const data = await response.json();
+      const fetchedTasks: Task[] = data.map((task: any) => ({
+        ...task,
+        task_due_date: task.task_due_date ? new Date(task.task_due_date) : null,
+        created_on: new Date(task.created_on),
+        last_updated_on: new Date(task.last_updated_on),
+      }));
+      setTasks(fetchedTasks.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()));
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+      toast({ title: 'Error Loading Tasks', description: 'Could not load tasks from the server. Please try again later.', variant: 'destructive' });
+    } finally {
+      setIsLoadingTasks(false);
     }
-  }, []);
+  }, [toast]);
 
-  // Effect to save tasks to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('taskwise-tasks', JSON.stringify(tasks));
-  }, [tasks]);
-
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleOpenForm = (task?: Task) => {
     setEditingTask(task || null);
@@ -109,35 +73,45 @@ export default function Home() {
     setEditingTask(null);
   };
 
-  const handleFormSubmit = (data: TaskFormData) => {
-    const currentUser = 'User'; // Mock user
-    const now = new Date();
+  const handleFormSubmit = async (data: TaskFormData) => {
+    const currentUser = 'User'; // Mock user, ideally from auth
+    const taskPayload = {
+      ...data,
+      task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
+      // created_by and last_updated_by will be set by backend if needed, or passed here
+    };
 
-    if (editingTask) {
-      setTasks(
-        tasks.map((task) =>
-          task.id === editingTask.id
-            ? {
-                ...task,
-                ...data,
-                last_updated_on: now,
-                last_updated_by: currentUser,
-              }
-            : task
-        )
-      );
-      toast({ title: 'Task Updated', description: `"${data.task_title}" has been updated.` });
-    } else {
-      const newTask: Task = {
-        id: crypto.randomUUID(),
-        ...data,
-        created_on: now,
-        last_updated_on: now,
-        created_by: currentUser,
-        last_updated_by: currentUser,
-      };
-      setTasks([newTask, ...tasks]);
-      toast({ title: 'Task Added', description: `"${data.task_title}" has been added to your list.` });
+    try {
+      let response;
+      let successMessage = '';
+
+      if (editingTask) {
+        response = await fetch(`${API_BASE_URL}/tasks/${editingTask.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(taskPayload),
+        });
+        successMessage = `"${data.task_title}" has been updated.`;
+      } else {
+        response = await fetch(`${API_BASE_URL}/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(taskPayload),
+        });
+        successMessage = `"${data.task_title}" has been added.`;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save task');
+      }
+      
+      // const savedTask = await response.json(); // The backend returns the created/updated task
+      toast({ title: editingTask ? 'Task Updated' : 'Task Added', description: successMessage });
+      fetchTasks(); // Re-fetch tasks to update the list
+    } catch (error: any) {
+      console.error('Failed to submit task:', error);
+      toast({ title: 'Error', description: error.message || 'Could not save the task.', variant: 'destructive' });
     }
   };
 
@@ -145,46 +119,72 @@ export default function Home() {
     setTaskToDelete(taskId);
   };
 
-  const confirmDeleteTask = () => {
+  const confirmDeleteTask = async () => {
     if (taskToDelete) {
       const task = tasks.find(t => t.id === taskToDelete);
-      setTasks(tasks.filter((task) => task.id !== taskToDelete));
-      toast({ title: 'Task Deleted', description: `Task "${task?.task_title}" has been deleted.`, variant: 'destructive' });
-      setTaskToDelete(null);
+      try {
+        const response = await fetch(`${API_BASE_URL}/tasks/${taskToDelete}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to delete task');
+        }
+        toast({ title: 'Task Deleted', description: `Task "${task?.task_title}" has been deleted.`, variant: 'destructive' });
+        fetchTasks(); // Re-fetch tasks
+      } catch (error: any) {
+        console.error('Failed to delete task:', error);
+        toast({ title: 'Error', description: error.message || 'Could not delete the task.', variant: 'destructive' });
+      } finally {
+        setTaskToDelete(null);
+      }
     }
   };
 
-
-  const handleAddSuggestedTask = (taskData: { title: string; description: string }) => {
-    const currentUser = 'AI Assistant';
+  const handleAddSuggestedTask = async (taskData: { title: string; description: string }) => {
+    const currentUser = 'AI Assistant'; // Or 'User' if AI just suggests content
     const now = new Date();
-    const newTask: Task = {
-      id: crypto.randomUUID(),
+    
+    const newTaskPayload: TaskFormData = {
       task_title: taskData.title,
       task_description: taskData.description,
-      task_due_date: null, // Suggested tasks might not have a due date
+      task_due_date: null,
       task_status: TaskStatus.Pending,
       task_remarks: 'AI Suggested',
-      created_on: now,
-      last_updated_on: now,
-      created_by: currentUser,
-      last_updated_by: currentUser,
     };
-    setTasks([newTask, ...tasks]);
-    toast({ title: 'Suggested Task Added', description: `"${newTask.task_title}" has been added.` });
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...newTaskPayload,
+             created_by: currentUser, // if backend expects this
+             last_updated_by: currentUser, // if backend expects this
+          }),
+        });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to add suggested task');
+      }
+      // const addedTask = await response.json();
+      toast({ title: 'Suggested Task Added', description: `"${newTaskPayload.task_title}" has been added.` });
+      fetchTasks(); // Re-fetch tasks
+    } catch (error: any) {
+      console.error('Failed to add suggested task:', error);
+      toast({ title: 'Error', description: error.message || 'Could not add suggested task.', variant: 'destructive' });
+    }
   };
 
-  const toggleSmartSuggestions = async () => {
+  const toggleSmartSuggestions = () => {
     setIsSmartSuggestionsVisible(prev => !prev);
-    // If we are opening it and tasks exist, it will auto-fetch if designed that way,
-    // or a button inside SmartSuggestionsSection will trigger it.
-    // The AppHeader button primarily toggles visibility.
   };
 
   const filteredTasks = tasks.filter(
     (task) =>
       task.task_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.task_description.toLowerCase().includes(searchQuery.toLowerCase())
+      (task.task_description && task.task_description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -192,7 +192,7 @@ export default function Home() {
       <AppHeader 
         onAddTask={() => handleOpenForm()} 
         onSuggestTasks={toggleSmartSuggestions}
-        isSuggestingTasks={isSuggestingTasksLoading}
+        isSuggestingTasks={isSuggestingTasksLoading} // This prop might be related to the AI button state in AppHeader
       />
       <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
         <div className="mb-6 relative">
@@ -206,20 +206,24 @@ export default function Home() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         </div>
 
-        <TaskList
-          tasks={filteredTasks}
-          onEditTask={handleOpenForm}
-          onDeleteTask={handleDeleteTask}
-        />
+        {isLoadingTasks ? (
+          <div className="text-center py-10 text-muted-foreground">Loading tasks...</div>
+        ) : (
+          <TaskList
+            tasks={filteredTasks}
+            onEditTask={handleOpenForm}
+            onDeleteTask={handleDeleteTask}
+          />
+        )}
         
         {isSmartSuggestionsVisible && (
            <SmartSuggestionsSection
-              existingTasks={tasks}
+              existingTasks={tasks} // Pass current tasks to AI
               onAddSuggestedTask={handleAddSuggestedTask}
               isVisible={isSmartSuggestionsVisible}
-          />
+              // Pass setIsSuggestingTasksLoading if SmartSuggestionsSection controls this state
+           />
         )}
-
       </main>
 
       <TaskFormDialog
@@ -248,7 +252,7 @@ export default function Home() {
       </AlertDialog>
       
       <footer className="text-center py-6 border-t border-border text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} TaskWise. Built with Next.js and AI.</p>
+        <p>&copy; {new Date().getFullYear()} TaskWise. Built with Next.js, FastAPI, and AI.</p>
       </footer>
     </div>
   );
