@@ -1,9 +1,8 @@
-
 "use client";
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { Users, Target, Rocket, ShieldCheck, Zap } from 'lucide-react'; // Added Zap
+import { Users, Target, Rocket, ShieldCheck, Zap, Lightbulb, BarChart3, LayoutDashboard } from 'lucide-react'; // Added Zap, Lightbulb, BarChart3, LayoutDashboard
 
 const FeatureCard = ({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) => (
   <motion.div
@@ -39,7 +38,7 @@ const AboutPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 dark:from-gray-900 dark:to-gray-800/30 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full bg-gradient-to-br from-background to-secondary/20 dark:from-gray-900 dark:to-gray-800/30 py-8 px-4 sm:px-6 lg:px-0"> {/* Adjusted padding */}
       <div className="container mx-auto">
         {/* Hero Section */}
         <motion.section
@@ -151,7 +150,7 @@ const AboutPage = () => {
             Join thousands of users who trust TaskWise to manage their daily work and long-term goals.
           </p>
           <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0px 10px 20px rgba(var(--primary-hsl), 0.3)" }}
+            whileHover={{ scale: 1.05, boxShadow: "0px 10px 20px rgba(var(--primary-hsl), 0.3)" }} // Note: --primary-hsl needs to be defined in CSS for this to work
             whileTap={{ scale: 0.95 }}
             className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-all text-lg"
             onClick={() => {

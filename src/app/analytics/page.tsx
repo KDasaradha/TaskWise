@@ -214,7 +214,7 @@ const AnalyticsPage = () => {
   
   if (tasks.length === 0 && !isLoading) {
     return (
-      <div className="container mx-auto px-4 md:px-8 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+      <div className="container mx-auto px-4 md:px-8 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-280px)] text-center"> {/* Adjusted min-height */}
          <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -239,7 +239,7 @@ const AnalyticsPage = () => {
 
 
   return (
-    <div className="container mx-auto px-4 md:px-8 py-12 bg-gradient-to-br from-background via-secondary/10 to-background dark:from-gray-900 dark:via-gray-800/20 dark:to-gray-900 min-h-screen">
+    <div className="w-full bg-gradient-to-br from-background via-secondary/10 to-background dark:from-gray-900 dark:via-gray-800/20 dark:to-gray-900 py-8 px-4 sm:px-6 lg:px-0"> {/* Adjusted padding */}
       <motion.h1
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}

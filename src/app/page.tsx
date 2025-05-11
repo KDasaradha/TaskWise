@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import AppHeader from '@/components/AppHeader';
+// AppHeader is now part of the global layout, so it's not imported here directly for rendering in this page component.
+// import AppHeader from '@/components/AppHeader'; 
 import TaskList from '@/components/TaskList';
 import TaskFormDialog, { TaskFormData } from '@/components/TaskFormDialog';
 import SmartSuggestionsSection from '@/components/SmartSuggestionsSection';
 import { Task, TaskStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Search, AlertTriangle, CircleCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Import Button
+import { Search, AlertTriangle, CircleCheck, PlusCircle, Lightbulb } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +25,6 @@ import axiosInstance from '@/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { usePathname } from 'next/navigation';
-
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -39,15 +39,12 @@ export default function Home() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
   const { toast } = useToast();
-  const pathname = usePathname();
-
 
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLDivElement>(null);
   const taskListRef = useRef<HTMLDivElement>(null);
   const smartSuggestionsRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
-
+  // Footer is now part of global layout, not managed here
 
   const fetchTasks = useCallback(async () => {
     setIsLoadingTasks(true);
@@ -82,10 +79,10 @@ export default function Home() {
   }, [fetchTasks]);
 
   useEffect(() => {
-    if (mainContainerRef.current) {
+    if (mainContainerRef.current && !isLoadingTasks) { // Ensure animations run after loading
       gsap.fromTo(mainContainerRef.current, 
         { opacity: 0, y: 30 }, 
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.2 }
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.1 }
       );
 
       if (searchInputRef.current) {
@@ -101,20 +98,7 @@ export default function Home() {
           }
         );
       }
-      
-      if (footerRef.current) {
-        gsap.fromTo(footerRef.current,
-          { opacity: 0, y: 20 },
-          {
-            opacity: 1, y: 0, duration: 0.7, ease: "power2.out",
-            scrollTrigger: {
-              trigger: footerRef.current,
-              start: "top 95%",
-              toggleActions: "play none none none"
-            }
-          }
-        );
-      }
+      // Footer animation is removed as footer is global now
     }
   }, [isLoadingTasks]); 
 
@@ -242,22 +226,24 @@ export default function Home() {
       task.task_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.task_description && task.task_description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+  
+  const buttonVariants = {
+    hover: { scale: 1.05, transition: { duration: 0.2 } },
+    tap: { scale: 0.95 },
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/30 dark:from-gray-900 dark:to-gray-800 overflow-x-hidden">
-      <AppHeader 
-        onAddTask={handleOpenForm} 
-        onSuggestTasks={toggleSmartSuggestions}
-        isSuggestingTasks={isSuggestingTasksLoading}
-      />
-      <main ref={mainContainerRef} className="flex-grow container mx-auto px-4 md:px-8 py-8">
-        <motion.div
-          ref={searchInputRef}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-8 relative"
-        >
+    // Removed min-h-screen and flex-col as these are handled by RootLayout
+    // Removed AppHeader as it's part of RootLayout
+    <div ref={mainContainerRef} className="w-full"> {/* Use mainContainerRef for GSAP page load animation */}
+      {/* Page-specific header actions */}
+      <motion.div 
+        className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <div ref={searchInputRef} className="relative w-full sm:max-w-md">
           <Input
             type="text"
             placeholder="Search tasks by title or description..."
@@ -267,45 +253,70 @@ export default function Home() {
             aria-label="Search tasks"
           />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
-        </motion.div>
-
-        <div ref={taskListRef}>
-          {isLoadingTasks ? (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-10 text-muted-foreground text-lg"
-            >
-              Loading tasks...
-            </motion.div>
-          ) : (
-            <TaskList
-              tasks={filteredTasks}
-              onEditTask={handleOpenForm}
-              onDeleteTask={handleDeleteTask}
-            />
-          )}
         </div>
-        
-        <AnimatePresence>
-          {isSmartSuggestionsVisible && (
-            <motion.div
-              ref={smartSuggestionsRef}
-              initial={{ opacity: 0, height: 0, y: 50 }}
-              animate={{ opacity: 1, height: 'auto', y: 0 }}
-              exit={{ opacity: 0, height: 0, y: 30 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="overflow-hidden" 
-            >
-              <SmartSuggestionsSection
-                existingTasks={tasks}
-                onAddSuggestedTask={handleAddSuggestedTask}
-                isVisible={isSmartSuggestionsVisible}
-              />
+
+        <div className="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto justify-end">
+            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+              <Button 
+                onClick={toggleSmartSuggestions} 
+                variant="outline" 
+                disabled={isSuggestingTasksLoading} 
+                className="rounded-lg shadow-sm border-accent/50 hover:border-accent hover:bg-accent/10 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-12 sm:h-auto"
+              >
+                <Lightbulb className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+                {isSuggestingTasksLoading ? 'Thinking...' : 'Smart Suggest'}
+              </Button>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+
+            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+              <Button 
+                onClick={() => handleOpenForm()} 
+                className="rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-primary-foreground text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 h-12 sm:h-auto"
+              >
+                <PlusCircle className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                Add Task
+              </Button>
+            </motion.div>
+        </div>
+      </motion.div>
+
+
+      <div ref={taskListRef}>
+        {isLoadingTasks ? (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-10 text-muted-foreground text-lg"
+          >
+            Loading tasks...
+          </motion.div>
+        ) : (
+          <TaskList
+            tasks={filteredTasks}
+            onEditTask={handleOpenForm}
+            onDeleteTask={handleDeleteTask}
+          />
+        )}
+      </div>
+      
+      <AnimatePresence>
+        {isSmartSuggestionsVisible && (
+          <motion.div
+            ref={smartSuggestionsRef}
+            initial={{ opacity: 0, height: 0, y: 50 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: 30 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="overflow-hidden mt-8" // Added margin top
+          >
+            <SmartSuggestionsSection
+              existingTasks={tasks}
+              onAddSuggestedTask={handleAddSuggestedTask}
+              isVisible={isSmartSuggestionsVisible}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isFormOpen && (
@@ -353,12 +364,7 @@ export default function Home() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <motion.footer 
-        ref={footerRef}
-        className="text-center py-8 border-t border-border/30 text-sm text-muted-foreground mt-12"
-      >
-        <p>&copy; {new Date().getFullYear()} TaskWise. Crafted with Next.js, FastAPI, and AI magic.</p>
-      </motion.footer>
+      {/* Footer is now global and removed from here */}
     </div>
   );
 }
