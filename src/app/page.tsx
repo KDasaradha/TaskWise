@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AppHeader from '@/components/AppHeader';
 import TaskList from '@/components/TaskList';
 import TaskFormDialog, { TaskFormData } from '@/components/TaskFormDialog';
@@ -8,7 +9,7 @@ import SmartSuggestionsSection from '@/components/SmartSuggestionsSection';
 import { Task, TaskStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle, CircleCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +20,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import axiosInstance from '@/lib/axios'; 
+import axiosInstance from '@/lib/axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -32,6 +38,14 @@ export default function Home() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
   const { toast } = useToast();
+
+  // Refs for GSAP animations
+  const mainContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLDivElement>(null);
+  const taskListRef = useRef<HTMLDivElement>(null);
+  const smartSuggestionsRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+
 
   const fetchTasks = useCallback(async () => {
     setIsLoadingTasks(true);
@@ -46,9 +60,13 @@ export default function Home() {
       }));
       setTasks(fetchedTasks.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()));
     } catch (error: any) {
-      // Axios interceptor will log detailed error
       const errorMessage = error.response?.data?.detail || error.message || 'Could not load tasks. Please ensure the backend is running.';
-      toast({ title: 'Error Loading Tasks', description: errorMessage, variant: 'destructive' });
+      toast({ 
+        title: 'Error Loading Tasks', 
+        description: errorMessage, 
+        variant: 'destructive',
+        icon: <AlertTriangle className="h-5 w-5" />
+      });
     } finally {
       setIsLoadingTasks(false);
     }
@@ -57,6 +75,47 @@ export default function Home() {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  // GSAP Animations Effect
+  useEffect(() => {
+    if (mainContainerRef.current) {
+      // Entrance animation for the whole page content
+      gsap.fromTo(mainContainerRef.current, 
+        { opacity: 0, y: 30 }, 
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.2 }
+      );
+
+      // Scroll-triggered animation for search input
+      if (searchInputRef.current) {
+        gsap.fromTo(searchInputRef.current,
+          { opacity: 0, scale: 0.9 },
+          {
+            opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)",
+            scrollTrigger: {
+              trigger: searchInputRef.current,
+              start: "top 90%", // Trigger when 90% of the element is visible
+              toggleActions: "play none none none" 
+            }
+          }
+        );
+      }
+      
+      // Scroll-triggered animation for footer
+      if (footerRef.current) {
+        gsap.fromTo(footerRef.current,
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1, y: 0, duration: 0.7, ease: "power2.out",
+            scrollTrigger: {
+              trigger: footerRef.current,
+              start: "top 95%",
+              toggleActions: "play none none none"
+            }
+          }
+        );
+      }
+    }
+  }, [isLoadingTasks]); // Re-run if loading state changes, to animate content once loaded
 
   const handleOpenForm = (task?: Task) => {
     setEditingTask(task || null);
@@ -73,38 +132,36 @@ export default function Home() {
     let successMessage = '';
 
     try {
+      const taskPayload = {
+        ...data,
+        task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
+        last_updated_by: "User", 
+        created_by: editingTask ? editingTask.created_by : "User", // Preserve original creator on edit
+      };
+
       if (editingTask) {
-        // For PUT, construct payload based on TaskUpdate model expectations (optional fields)
-        // TaskFormData from Zod has defaults, so all fields will be present.
-        // Backend's TaskUpdate uses exclude_unset=True, so this is fine.
-        const updatePayload = {
-          ...data, // Contains all fields from TaskFormData
-          task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
-          last_updated_by: "User", // Example: should ideally be dynamic
-        };
-        response = await axiosInstance.put(`/tasks/${editingTask.id}`, updatePayload);
+        response = await axiosInstance.put(`/tasks/${editingTask.id}`, taskPayload);
         successMessage = `"${data.task_title}" has been updated.`;
       } else {
-        // For POST, construct payload explicitly matching TaskCreate model (or TaskBase fields)
-        const createPayload = {
-          task_title: data.task_title,
-          task_description: data.task_description, // Zod default ensures this is a string
-          task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
-          task_status: data.task_status,
-          task_remarks: data.task_remarks, // Zod default ensures this is a string
-          created_by: "User", // Example: backend TaskCreate also has a default
-        };
-        response = await axiosInstance.post('/tasks', createPayload);
+        response = await axiosInstance.post('/tasks', taskPayload);
         successMessage = `"${data.task_title}" has been added.`;
       }
       
-      toast({ title: editingTask ? 'Task Updated' : 'Task Added', description: successMessage });
+      toast({ 
+        title: editingTask ? 'Task Updated' : 'Task Added', 
+        description: successMessage,
+        icon: <CircleCheck className="h-5 w-5 text-green-500" />
+      });
       fetchTasks(); 
       handleCloseForm();
     } catch (error: any) {
-      // Axios interceptor will log detailed error
       const errorMessage = error.response?.data?.detail || error.message || 'Could not save the task. Please ensure the backend is running and reachable.';
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: errorMessage, 
+        variant: 'destructive',
+        icon: <AlertTriangle className="h-5 w-5" />
+      });
     }
   };
 
@@ -117,12 +174,21 @@ export default function Home() {
       const task = tasks.find(t => t.id === taskToDelete);
       try {
         await axiosInstance.delete(`/tasks/${taskToDelete}`);
-        toast({ title: 'Task Deleted', description: `Task "${task?.task_title}" has been deleted.`, variant: 'destructive' });
+        toast({ 
+          title: 'Task Deleted', 
+          description: `Task "${task?.task_title}" has been deleted.`, 
+          variant: 'destructive',
+          icon: <AlertTriangle className="h-5 w-5" />
+        });
         fetchTasks(); 
       } catch (error: any) {
-        // Axios interceptor will log detailed error
         const errorMessage = error.response?.data?.detail || error.message || 'Could not delete the task.';
-        toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+        toast({ 
+          title: 'Error', 
+          description: errorMessage, 
+          variant: 'destructive',
+          icon: <AlertTriangle className="h-5 w-5" />
+        });
       } finally {
         setTaskToDelete(null);
       }
@@ -135,7 +201,7 @@ export default function Home() {
     const newTaskPayload = {
       task_title: taskData.title,
       task_description: taskData.description,
-      task_due_date: null, // Suggested tasks might not have a due date initially
+      task_due_date: null, 
       task_status: TaskStatus.Pending,
       task_remarks: 'AI Suggested',
       created_by: currentUser,
@@ -143,12 +209,20 @@ export default function Home() {
 
     try {
         await axiosInstance.post('/tasks', newTaskPayload);
-        toast({ title: 'Suggested Task Added', description: `"${newTaskPayload.task_title}" has been added.` });
+        toast({ 
+          title: 'Suggested Task Added', 
+          description: `"${newTaskPayload.task_title}" has been added.`,
+          icon: <CircleCheck className="h-5 w-5 text-green-500" /> 
+        });
         fetchTasks(); 
     } catch (error: any) {
-      // Axios interceptor will log detailed error
       const errorMessage = error.response?.data?.detail || error.message || 'Could not add suggested task.';
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: errorMessage, 
+        variant: 'destructive',
+        icon: <AlertTriangle className="h-5 w-5" />
+      });
     }
   };
 
@@ -163,70 +237,126 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/30 dark:from-gray-900 dark:to-gray-800 overflow-x-hidden">
       <AppHeader 
         onAddTask={() => handleOpenForm()} 
         onSuggestTasks={toggleSmartSuggestions}
         isSuggestingTasks={isSuggestingTasksLoading}
       />
-      <main className="flex-grow container mx-auto px-4 md:px-8 py-8">
-        <div className="mb-6 relative">
+      <main ref={mainContainerRef} className="flex-grow container mx-auto px-4 md:px-8 py-8">
+        {/* Search Input Section with Framer Motion */}
+        <motion.div
+          ref={searchInputRef}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-8 relative"
+        >
           <Input
             type="text"
             placeholder="Search tasks by title or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 text-base py-6 rounded-lg shadow-sm focus-visible:ring-primary focus-visible:ring-2"
+            className="pl-12 text-base py-6 rounded-xl shadow-lg border-border/50 focus-visible:ring-primary focus-visible:ring-2 bg-card/80 backdrop-blur-sm"
+            aria-label="Search tasks"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        </div>
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+        </motion.div>
 
-        {isLoadingTasks ? (
-          <div className="text-center py-10 text-muted-foreground">Loading tasks...</div>
-        ) : (
-          <TaskList
-            tasks={filteredTasks}
-            onEditTask={handleOpenForm}
-            onDeleteTask={handleDeleteTask}
-          />
-        )}
+        {/* Task List Section */}
+        <div ref={taskListRef}>
+          {isLoadingTasks ? (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-10 text-muted-foreground text-lg"
+            >
+              Loading tasks...
+            </motion.div>
+          ) : (
+            <TaskList
+              tasks={filteredTasks}
+              onEditTask={handleOpenForm}
+              onDeleteTask={handleDeleteTask}
+            />
+          )}
+        </div>
         
-        {isSmartSuggestionsVisible && (
-           <SmartSuggestionsSection
-              existingTasks={tasks}
-              onAddSuggestedTask={handleAddSuggestedTask}
-              isVisible={isSmartSuggestionsVisible}
-           />
-        )}
+        {/* Smart Suggestions Section with AnimatePresence for appear/disappear */}
+        <AnimatePresence>
+          {isSmartSuggestionsVisible && (
+            <motion.div
+              ref={smartSuggestionsRef}
+              initial={{ opacity: 0, height: 0, y: 50 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: 30 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="overflow-hidden" // Important for height animation
+            >
+              <SmartSuggestionsSection
+                existingTasks={tasks}
+                onAddSuggestedTask={handleAddSuggestedTask}
+                isVisible={isSmartSuggestionsVisible} // Prop might be redundant with AnimatePresence
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      <TaskFormDialog
-        isOpen={isFormOpen}
-        onClose={handleCloseForm}
-        onSubmit={handleFormSubmit}
-        initialData={editingTask}
-      />
+      {/* Task Form Dialog with AnimatePresence */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <TaskFormDialog
+            isOpen={isFormOpen}
+            onClose={handleCloseForm}
+            onSubmit={handleFormSubmit}
+            initialData={editingTask}
+          />
+        )}
+      </AnimatePresence>
 
+      {/* Alert Dialog for Deletion Confirmation */}
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-card shadow-2xl rounded-xl border-border/50">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this task?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-semibold text-foreground">Are you sure you want to delete this task?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               This action cannot be undone. This will permanently delete the task
               "{tasks.find(t => t.id === taskToDelete)?.task_title}".
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setTaskToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive hover:bg-destructive/90">
-              Delete
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel 
+              asChild
+              onClick={() => setTaskToDelete(null)}
+            >
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+              >
+                Cancel
+              </motion.button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild onClick={confirmDeleteTask}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              >
+                Delete
+              </motion.button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       
-      <footer className="text-center py-6 border-t border-border text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} TaskWise. Built with Next.js, FastAPI, and AI.</p>
-      </footer>
+      <motion.footer 
+        ref={footerRef}
+        className="text-center py-8 border-t border-border/30 text-sm text-muted-foreground mt-12"
+      >
+        <p>&copy; {new Date().getFullYear()} TaskWise. Crafted with Next.js, FastAPI, and AI magic.</p>
+      </motion.footer>
     </div>
   );
+}

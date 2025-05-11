@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,35 +11,35 @@
     --muted: 204 17% 90%;
     --muted-foreground: 210 20% 45%; /* Lighter Grey text */
 
-    --popover: 204 17% 93%;
+    --popover: 204 17% 98%; /* Slightly whiter for popovers */
     --popover-foreground: 210 20% 25%;
 
-    --card: 204 17% 93%;
+    --card: 204 17% 96%; /* Slightly whiter for cards */
     --card-foreground: 210 20% 25%;
 
     --border: 204 17% 80%;
-    --input: 204 17% 80%;
+    --input: 204 17% 85%; /* Input background slightly different */
 
     --primary: 207 68% 53%; /* Clean Blue - #3498db */
     --primary-foreground: 0 0% 98%; /* White text for blue */
 
-    --secondary: 204 17% 88%; /* Slightly darker grey */
+    --secondary: 204 17% 88%; /* Slightly darker grey for secondary elements */
     --secondary-foreground: 210 20% 25%;
 
     --accent: 28 80% 52%; /* Orange - #e67e22 */
     --accent-foreground: 0 0% 98%; /* White text for orange */
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 60.2%; /* Red for destructive actions */
     --destructive-foreground: 0 0% 98%;
 
-    --ring: 207 68% 53%; /* Blue for ring */
+    --ring: 207 68% 53%; /* Blue for focus rings */
 
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Slightly larger radius for modern feel */
 
     /* Sidebar variables - kept from original for completeness, adjust if sidebar is used */
-    --sidebar-background: 240 5.9% 10%; /* Darker sidebar */
+    --sidebar-background: 240 5.9% 10%; 
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 207 68% 53%; /* Blue for sidebar primary elements */
+    --sidebar-primary: 207 68% 53%; 
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 0 0% 98%;
@@ -47,43 +48,43 @@
   }
 
   .dark {
-    --background: 210 20% 15%; /* Dark Grey */
-    --foreground: 204 17% 85%; /* Light Grey text */
+    --background: 210 20% 10%; /* Darker Grey for dark mode */
+    --foreground: 204 17% 88%; /* Lighter Grey text for dark mode */
 
-    --muted: 210 20% 20%;
+    --muted: 210 20% 15%;
     --muted-foreground: 204 17% 65%;
 
-    --popover: 210 20% 15%;
-    --popover-foreground: 204 17% 85%;
+    --popover: 210 20% 12%; 
+    --popover-foreground: 204 17% 88%;
 
-    --card: 210 20% 15%;
-    --card-foreground: 204 17% 85%;
+    --card: 210 20% 14%; 
+    --card-foreground: 204 17% 88%;
 
-    --border: 210 20% 30%;
-    --input: 210 20% 30%;
+    --border: 210 20% 25%; /* Darker border */
+    --input: 210 20% 20%;  /* Darker input background */
 
-    --primary: 207 68% 53%; /* Clean Blue */
+    --primary: 207 68% 53%; 
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 20% 25%;
+    --secondary: 210 20% 22%;
     --secondary-foreground: 0 0% 98%;
 
-    --accent: 28 80% 52%; /* Orange */
+    --accent: 28 80% 52%; 
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 70% 50%; /* Slightly adjusted destructive for dark */
     --destructive-foreground: 0 0% 98%;
 
     --ring: 207 68% 53%;
 
     /* Dark Sidebar variables */
-    --sidebar-background: 210 20% 10%;
+    --sidebar-background: 210 20% 8%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 207 68% 53%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 210 20% 20%;
+    --sidebar-accent: 210 20% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 210 20% 25%;
+    --sidebar-border: 210 20% 22%;
     --sidebar-ring: 207 68% 53%;
   }
 }
@@ -93,7 +94,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    /* Removed font-family: Arial, Helvetica, sans-serif; It will use Geist from layout.tsx and tailwind.config.ts */
+    @apply bg-background text-foreground antialiased;
+    /* Apply custom scrollbar styling */
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: hsl(var(--primary)) hsl(var(--background)); /* For Firefox: thumb track */
+  }
+
+  /* Custom scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+  body::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  body::-webkit-scrollbar-track {
+    @apply bg-background rounded-md;
+  }
+  body::-webkit-scrollbar-thumb {
+    @apply bg-primary rounded-md border-2 border-transparent bg-clip-content;
+  }
+  body::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/80;
+  }
+}
+
+/* Utility class for glassmorphism effect */
+@layer utilities {
+  .glassmorphism {
+    @apply bg-opacity-50 backdrop-blur-lg border border-white/20 shadow-lg;
+  }
+  .dark .glassmorphism {
+     @apply bg-opacity-30 border-white/10; /* Adjust for dark mode */
   }
 }
