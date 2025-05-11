@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'TaskWise',
-  description: 'Smart Task Management Application',
+  title: 'TaskWise - Smart Task Management',
+  description: 'Efficiently manage your tasks with an intelligent and modern application.',
 };
 
 export default function RootLayout({
@@ -33,21 +33,21 @@ export default function RootLayout({
         className={cn(
           geistSans.variable, 
           geistMono.variable, 
-          "font-sans antialiased bg-background text-foreground dark:bg-background" 
+          "font-sans antialiased bg-background text-foreground"
         )}
       >
         <SidebarProvider defaultOpen={true}>
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen w-full">
             <SiteSidebar />
             <div 
               className={cn(
-                "flex flex-col flex-grow transition-[margin-left] duration-300 ease-in-out",
+                "flex flex-col flex-grow transition-all duration-300 ease-in-out",
                 "md:peer-data-[state=expanded]:peer-data-[variant=sidebar]:ml-[var(--sidebar-width)]",
                 "md:peer-data-[state=collapsed]:peer-data-[variant=sidebar]:ml-[var(--sidebar-width-icon)]"
               )}
             >
               <AppHeader />
-              <main className="flex-grow p-4 sm:p-6 md:p-8 overflow-y-auto"> 
+              <main className="flex-grow p-4 sm:p-5 md:p-6 lg:p-8 overflow-y-auto"> 
                 {children}
               </main>
             </div>

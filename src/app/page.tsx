@@ -8,7 +8,7 @@ import { Task, TaskStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, AlertTriangle, CheckCircle, PlusCircle, Lightbulb, Loader2 as LoaderIcon } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle, PlusCircle, Lightbulb, Loader2 as LoaderIcon, LayoutGrid } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,12 +21,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import axiosInstance from '@/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -39,11 +35,7 @@ export default function Home() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
   const { toast } = useToast();
-
-  const mainContainerRef = useRef<HTMLDivElement>(null);
-  const controlsRef = useRef<HTMLDivElement>(null); 
-  const taskListRef = useRef<HTMLDivElement>(null);
-  const smartSuggestionsRef = useRef<HTMLDivElement>(null);
+  const pageContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchTasks = useCallback(async () => {
     setIsLoadingTasks(true);
@@ -76,29 +68,6 @@ export default function Home() {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
-
-  useEffect(() => {
-    if (mainContainerRef.current && !isLoadingTasks) { 
-      gsap.fromTo(mainContainerRef.current, 
-        { opacity: 0, y: 20 }, 
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", delay: 0.1 }
-      );
-
-      if (controlsRef.current) {
-        gsap.fromTo(controlsRef.current.children,
-          { opacity: 0, y: -15, scale: 0.98 },
-          {
-            opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.4)", stagger: 0.1,
-            scrollTrigger: {
-              trigger: controlsRef.current,
-              start: "top 95%", 
-              toggleActions: "play none none reset" 
-            }
-          }
-        );
-      }
-    }
-  }, [isLoadingTasks]); 
 
   const handleOpenForm = (task?: Task) => {
     setEditingTask(task || null);
@@ -220,11 +189,6 @@ export default function Home() {
 
   const toggleSmartSuggestions = () => {
     setIsSmartSuggestionsVisible(prev => !prev);
-     if (!isSmartSuggestionsVisible && smartSuggestionsRef.current) {
-      setTimeout(() => {
-        smartSuggestionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 300);
-    }
   };
 
   const filteredTasks = tasks.filter(
@@ -233,48 +197,65 @@ export default function Home() {
       (task.task_description && task.task_description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
   
-  const buttonMotionProps = {
-    whileHover: { scale: 1.03, y: -1, boxShadow: "0px 4px 12px hsla(var(--primary-rgb), 0.1)" },
-    whileTap: { scale: 0.97, y: 0 },
-    transition: { type: "spring", stiffness: 400, damping: 15 }
+  const pageVariants = {
+    initial: { opacity: 0, y: 15 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "circOut" } },
+    exit: { opacity: 0, y: -10, transition: { duration: 0.25, ease: "circIn" } }
   };
 
+  const controlsVariants = {
+    initial: { opacity: 0, y: -10 },
+    animate: { opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.35, ease: "circOut" } }
+  };
+  
+  const buttonMotionProps = {
+    whileHover: { scale: 1.02, y: -1, boxShadow: "0px 3px 10px hsla(var(--primary-rgb), 0.12)" },
+    whileTap: { scale: 0.97, y: 0 },
+    transition: { type: "spring", stiffness: 350, damping: 15 }
+  };
+
+
   return (
-    <div ref={mainContainerRef} className="w-full space-y-8"> 
+    <motion.div 
+      ref={pageContainerRef} 
+      className="w-full space-y-6 sm:space-y-8"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    > 
       <motion.div 
-        ref={controlsRef}
-        className="flex flex-col sm:flex-row items-center justify-between gap-4 p-1" 
-        initial={{ opacity: 0 }} 
-        animate={{ opacity: 1 }}
+        className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4" 
+        variants={controlsVariants}
       >
-        <div className="relative w-full sm:max-w-lg"> 
+        <div className="relative w-full sm:max-w-md lg:max-w-lg"> 
           <Input
             type="text"
-            placeholder="Search tasks by title, description..."
+            placeholder="Search tasks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn(
-                "pl-12 text-base py-3 rounded-xl shadow-lg border-border/60 focus-visible:ring-primary focus-visible:ring-2",
-                "bg-card/90 dark:bg-card/70 backdrop-blur-sm placeholder:text-muted-foreground/80"
+                "pl-10 text-sm sm:text-base py-2.5 h-11 rounded-lg shadow-sm border-border/70 focus-visible:ring-primary focus-visible:ring-1.5",
+                "bg-card placeholder:text-muted-foreground/70"
             )}
             aria-label="Search tasks"
           />
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-[1.1rem] w-[1.1rem] text-muted-foreground/80" />
         </div>
 
-        <div className="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto justify-end shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-2.5 w-full sm:w-auto justify-end shrink-0">
             <motion.div {...buttonMotionProps}>
               <Button 
                 onClick={toggleSmartSuggestions} 
                 variant="outline" 
                 disabled={isSuggestingTasksLoading} 
                 className={cn(
-                    "rounded-lg shadow-md border-accent/70 hover:border-accent hover:bg-accent/10 text-accent",
-                    "text-xs sm:text-sm px-3 sm:px-4 py-2 h-11 sm:h-auto transition-all duration-200"
+                    "rounded-lg shadow-sm border-accent/80 hover:border-accent hover:bg-accent/10 text-accent",
+                    "text-xs sm:text-sm px-3 h-10 sm:h-11 transition-all group"
                 )}
               >
-                {isSuggestingTasksLoading ? <LoaderIcon className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : <Lightbulb className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
-                {isSuggestingTasksLoading ? 'Thinking...' : 'Smart Suggest'}
+                {isSuggestingTasksLoading ? <LoaderIcon className="mr-1.5 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-1.5 h-4 w-4 group-hover:fill-current transition-colors" />}
+                {isSuggestingTasksLoading ? 'AI Thinking...' : 'Smart Ideas'}
               </Button>
             </motion.div>
 
@@ -284,22 +265,21 @@ export default function Home() {
                 className={cn(
                     "rounded-lg shadow-md hover:shadow-lg text-primary-foreground",
                     "bg-primary hover:bg-primary/90", 
-                    "text-xs sm:text-sm px-3 sm:px-4 py-2 h-11 sm:h-auto transition-all duration-200"
+                    "text-xs sm:text-sm px-3 h-10 sm:h-11 transition-all"
                 )}
               >
-                <PlusCircle className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Add Task
+                <PlusCircle className="mr-1.5 h-4 w-4" />
+                Add New Task
               </Button>
             </motion.div>
         </div>
       </motion.div>
 
-
-      <div ref={taskListRef}>
+      <div>
         {isLoadingTasks ? (
-          <div className="space-y-4 pt-4">
-            {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-xl bg-card/80 dark:bg-card/60" />
+          <div className="space-y-3.5 pt-3">
+            {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-[72px] w-full rounded-lg bg-card/90" />
             ))}
           </div>
         ) : (
@@ -314,17 +294,16 @@ export default function Home() {
       <AnimatePresence>
         {isSmartSuggestionsVisible && (
           <motion.div
-            ref={smartSuggestionsRef}
-            initial={{ opacity: 0, height: 0, y: 30 }}
+            initial={{ opacity: 0, height: 0, y: 20 }}
             animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: 20 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="overflow-hidden mt-6" 
+            exit={{ opacity: 0, height: 0, y: 15 }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
+            className="overflow-hidden mt-5" 
           >
             <SmartSuggestionsSection
               existingTasks={tasks}
               onAddSuggestedTask={handleAddSuggestedTask}
-              isVisible={isSmartSuggestionsVisible}
+              isVisible={isSmartSuggestionsVisible} // Pass visibility for internal logic if needed
             />
           </motion.div>
         )}
@@ -338,21 +317,19 @@ export default function Home() {
       />
       
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
-        <AlertDialogContent className="bg-card shadow-2xl rounded-xl border-border/50 glassmorphism">
+        <AlertDialogContent className="bg-card shadow-xl rounded-lg border-border/60">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-semibold text-foreground">Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              This will permanently delete the task: "{tasks.find(t => t.id === taskToDelete)?.task_title || 'Selected Task'}". This action cannot be undone.
+            <AlertDialogTitle className="text-lg font-semibold text-foreground">Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-sm">
+              Are you sure you want to delete the task: "{tasks.find(t => t.id === taskToDelete)?.task_title || 'Selected Task'}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="mt-5 gap-2 sm:gap-3">
-            <AlertDialogCancel 
-              asChild
-            >
+          <AlertDialogFooter className="mt-4 gap-2 sm:gap-2.5">
+            <AlertDialogCancel asChild >
               <motion.button
                 {...buttonMotionProps}
                 onClick={() => setTaskToDelete(null)} 
-                className="px-5 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-md border border-border hover:bg-muted transition-colors text-xs sm:text-sm font-medium"
               >
                 Cancel
               </motion.button>
@@ -361,7 +338,7 @@ export default function Home() {
               <motion.button
                 {...buttonMotionProps}
                 onClick={confirmDeleteTask} 
-                className="px-5 py-2.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors text-sm font-medium"
+                className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors text-xs sm:text-sm font-medium"
               >
                 Delete Task
               </motion.button>
@@ -369,6 +346,6 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   );
 }
