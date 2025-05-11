@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -24,9 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+    <html lang="en" suppressHydrationWarning> {/* Added suppressHydrationWarning for potential dark mode issues */}
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased flex flex-col min-h-screen bg-background dark:bg-gray-900`}>
+        {/* The AppHeader will be part of the children from individual page layouts or page.tsx */}
+        <div className="flex-grow">
+          {children}
+        </div>
         <Toaster />
       </body>
     </html>

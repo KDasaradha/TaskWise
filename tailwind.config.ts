@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
@@ -49,11 +50,12 @@ export default {
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
   			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
+  				'1': 'hsl(var(--chart-1))', // Example: Yellowish for Pending
+  				'2': 'hsl(var(--chart-2))', // Example: Blueish for In Progress
+  				'3': 'hsl(var(--chart-3))', // Example: Greenish for Completed
+  				'4': 'hsl(var(--chart-4))', // Example: Purple for Created
+  				'5': 'hsl(var(--chart-5))', // Example: Teal for another category
+          default: 'hsl(var(--muted))'
   			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',

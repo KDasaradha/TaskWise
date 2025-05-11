@@ -36,6 +36,14 @@
 
     --radius: 0.75rem; /* Slightly larger radius for modern feel */
 
+    /* Chart Colors */
+    --chart-1: 48 96% 58%; /* Yellowish */
+    --chart-2: 207 68% 53%; /* Blueish (same as primary) */
+    --chart-3: 145 63% 49%; /* Greenish */
+    --chart-4: 262 74% 66%; /* Purplish */
+    --chart-5: 173 58% 50%; /* Tealish */
+
+
     /* Sidebar variables - kept from original for completeness, adjust if sidebar is used */
     --sidebar-background: 240 5.9% 10%; 
     --sidebar-foreground: 0 0% 98%;
@@ -76,6 +84,13 @@
     --destructive-foreground: 0 0% 98%;
 
     --ring: 207 68% 53%;
+
+    /* Dark Chart Colors - Adjust as needed for dark theme visibility */
+    --chart-1: 48 90% 65%; 
+    --chart-2: 207 70% 60%;
+    --chart-3: 145 60% 55%;
+    --chart-4: 262 70% 70%;
+    --chart-5: 173 55% 58%;
 
     /* Dark Sidebar variables */
     --sidebar-background: 210 20% 8%;

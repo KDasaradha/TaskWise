@@ -24,6 +24,8 @@ import axiosInstance from '@/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { usePathname } from 'next/navigation';
+
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -33,13 +35,14 @@ export default function Home() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSmartSuggestionsVisible, setIsSmartSuggestionsVisible] = useState(false);
-  const [isSuggestingTasksLoading, setIsSuggestingTasksLoading] = useState(false);
+  const [isSuggestingTasksLoading, setIsSuggestingTasksLoading] = useState(false); // This state might be managed by AppHeader now or passed to it.
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
   const { toast } = useToast();
+  const pathname = usePathname();
 
-  // Refs for GSAP animations
+
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLDivElement>(null);
   const taskListRef = useRef<HTMLDivElement>(null);
@@ -76,16 +79,13 @@ export default function Home() {
     fetchTasks();
   }, [fetchTasks]);
 
-  // GSAP Animations Effect
   useEffect(() => {
     if (mainContainerRef.current) {
-      // Entrance animation for the whole page content
       gsap.fromTo(mainContainerRef.current, 
         { opacity: 0, y: 30 }, 
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.2 }
       );
 
-      // Scroll-triggered animation for search input
       if (searchInputRef.current) {
         gsap.fromTo(searchInputRef.current,
           { opacity: 0, scale: 0.9 },
@@ -93,14 +93,13 @@ export default function Home() {
             opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)",
             scrollTrigger: {
               trigger: searchInputRef.current,
-              start: "top 90%", // Trigger when 90% of the element is visible
+              start: "top 90%", 
               toggleActions: "play none none none" 
             }
           }
         );
       }
       
-      // Scroll-triggered animation for footer
       if (footerRef.current) {
         gsap.fromTo(footerRef.current,
           { opacity: 0, y: 20 },
@@ -115,7 +114,7 @@ export default function Home() {
         );
       }
     }
-  }, [isLoadingTasks]); // Re-run if loading state changes, to animate content once loaded
+  }, [isLoadingTasks]); 
 
   const handleOpenForm = (task?: Task) => {
     setEditingTask(task || null);
@@ -136,7 +135,7 @@ export default function Home() {
         ...data,
         task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
         last_updated_by: "User", 
-        created_by: editingTask ? editingTask.created_by : "User", // Preserve original creator on edit
+        created_by: editingTask ? editingTask.created_by : "User", 
       };
 
       if (editingTask) {
@@ -239,12 +238,11 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/30 dark:from-gray-900 dark:to-gray-800 overflow-x-hidden">
       <AppHeader 
-        onAddTask={() => handleOpenForm()} 
+        onAddTask={handleOpenForm} 
         onSuggestTasks={toggleSmartSuggestions}
-        isSuggestingTasks={isSuggestingTasksLoading}
+        isSuggestingTasks={isSuggestingTasksLoading} // This state is for the "Smart Suggestions" button in AppHeader
       />
       <main ref={mainContainerRef} className="flex-grow container mx-auto px-4 md:px-8 py-8">
-        {/* Search Input Section with Framer Motion */}
         <motion.div
           ref={searchInputRef}
           initial={{ opacity: 0, y: -20 }}
@@ -263,7 +261,6 @@ export default function Home() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-muted-foreground" />
         </motion.div>
 
-        {/* Task List Section */}
         <div ref={taskListRef}>
           {isLoadingTasks ? (
             <motion.div 
@@ -282,7 +279,6 @@ export default function Home() {
           )}
         </div>
         
-        {/* Smart Suggestions Section with AnimatePresence for appear/disappear */}
         <AnimatePresence>
           {isSmartSuggestionsVisible && (
             <motion.div
@@ -291,19 +287,18 @@ export default function Home() {
               animate={{ opacity: 1, height: 'auto', y: 0 }}
               exit={{ opacity: 0, height: 0, y: 30 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="overflow-hidden" // Important for height animation
+              className="overflow-hidden" 
             >
               <SmartSuggestionsSection
                 existingTasks={tasks}
                 onAddSuggestedTask={handleAddSuggestedTask}
-                isVisible={isSmartSuggestionsVisible} // Prop might be redundant with AnimatePresence
+                isVisible={isSmartSuggestionsVisible}
               />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
-      {/* Task Form Dialog with AnimatePresence */}
       <AnimatePresence>
         {isFormOpen && (
           <TaskFormDialog
@@ -315,7 +310,6 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Alert Dialog for Deletion Confirmation */}
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
         <AlertDialogContent className="bg-card shadow-2xl rounded-xl border-border/50">
           <AlertDialogHeader>
