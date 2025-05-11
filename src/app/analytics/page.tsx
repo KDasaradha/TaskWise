@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -12,13 +11,15 @@ import { AlertTriangle, Loader2, PieChartIcon, BarChartBig } from 'lucide-react'
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import { format } from 'date-fns'; 
+
 
 // Define colors for charts - ensuring they are accessible
 const COLORS = {
-  [TaskStatus.Pending]: 'hsl(var(--chart-1))', // Yellowish
-  [TaskStatus.InProgress]: 'hsl(var(--chart-2))', // Blueish
-  [TaskStatus.Completed]: 'hsl(var(--chart-3))', // Greenish
-  default: 'hsl(var(--muted))', // Grey for others
+  [TaskStatus.Pending]: 'hsl(var(--chart-1))', 
+  [TaskStatus.InProgress]: 'hsl(var(--chart-2))', 
+  [TaskStatus.Completed]: 'hsl(var(--chart-3))', 
+  default: 'hsl(var(--muted))', 
 };
 
 const ChartCard: FC<{ title: string; description?: string; children: React.ReactNode; icon?: React.ReactNode }> = ({ title, description, children, icon }) => (
@@ -64,9 +65,13 @@ const AnalyticsPage = () => {
       }));
       setTasks(fetchedTasks);
     } catch (error: any) {
+      let description = error.message || 'Could not load tasks for analytics.';
+      if (error.message === 'Network Error') {
+        description = 'Network Error: Failed to connect to the server. Please ensure the backend is running and accessible at the configured API URL.';
+      }
       toast({
-        title: 'Error Loading Tasks',
-        description: error.message || 'Could not load tasks for analytics.',
+        title: 'Error Loading Analytics Data',
+        description: description,
         variant: 'destructive',
         icon: <AlertTriangle className="h-5 w-5" />,
       });
@@ -94,7 +99,7 @@ const AnalyticsPage = () => {
       { name: 'Pending', value: counts[TaskStatus.Pending], fill: COLORS[TaskStatus.Pending] },
       { name: 'In Progress', value: counts[TaskStatus.InProgress], fill: COLORS[TaskStatus.InProgress] },
       { name: 'Completed', value: counts[TaskStatus.Completed], fill: COLORS[TaskStatus.Completed] },
-    ].filter(item => item.value > 0); // Only include statuses with tasks
+    ].filter(item => item.value > 0); 
   }, [tasks]);
   
   const tasksByMonthData = useMemo(() => {
@@ -110,14 +115,21 @@ const AnalyticsPage = () => {
     });
   
     tasks.forEach(task => {
-      const createdMonth = format(new Date(task.created_on), 'MMM');
-      if (monthCounts[createdMonth]) {
-        monthCounts[createdMonth].created++;
+      const createdOnDate = new Date(task.created_on);
+      if (!isNaN(createdOnDate.getTime())) {
+        const createdMonth = format(createdOnDate, 'MMM');
+        if (monthCounts[createdMonth]) {
+          monthCounts[createdMonth].created++;
+        }
       }
-      if (task.task_status === TaskStatus.Completed && task.last_updated_on) { // Assuming last_updated_on is completion date for completed tasks
-        const completedMonth = format(new Date(task.last_updated_on), 'MMM');
-        if (monthCounts[completedMonth]) {
-          monthCounts[completedMonth].completed++;
+
+      if (task.task_status === TaskStatus.Completed && task.last_updated_on) {
+        const lastUpdatedOnDate = new Date(task.last_updated_on);
+        if(!isNaN(lastUpdatedOnDate.getTime())) {
+            const completedMonth = format(lastUpdatedOnDate, 'MMM');
+            if (monthCounts[completedMonth]) {
+              monthCounts[completedMonth].completed++;
+            }
         }
       }
     });
@@ -289,4 +301,3 @@ const AnalyticsPage = () => {
 };
 
 export default AnalyticsPage;
-

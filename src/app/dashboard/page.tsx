@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button'; 
+import { cn } from '@/lib/utils'; 
 import { AlertTriangle, CheckCircle2, Loader2, ListChecks, Hourglass, Activity, CalendarClock } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -52,9 +53,13 @@ const DashboardPage = () => {
       }));
       setTasks(fetchedTasks);
     } catch (error: any) {
+      let description = error.message || 'Could not load tasks for dashboard.';
+      if (error.message === 'Network Error') {
+        description = 'Network Error: Failed to connect to the server. Please ensure the backend is running and accessible at the configured API URL.';
+      }
       toast({
-        title: 'Error Loading Tasks',
-        description: error.message || 'Could not load tasks for dashboard.',
+        title: 'Error Loading Dashboard Data',
+        description: description,
         variant: 'destructive',
         icon: <AlertTriangle className="h-5 w-5" />,
       });
@@ -94,11 +99,11 @@ const DashboardPage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
   };
   
-  const getStatusBadgeVariant = (status: TaskStatus) => {
+  const getStatusBadgeVariant = (status: TaskStatus): "default" | "secondary" | "outline" | "destructive" | null | undefined => {
     switch (status) {
       case TaskStatus.Pending: return "secondary";
       case TaskStatus.InProgress: return "default";
-      case TaskStatus.Completed: return "outline";
+      case TaskStatus.Completed: return "outline"; 
       default: return "secondary";
     }
   };
@@ -192,10 +197,10 @@ const DashboardPage = () => {
                     {recentlyUpdatedTasks.map((task, index) => (
                       <motion.tr 
                         key={task.id}
-                        variants={itemVariants} // Use itemVariants for individual row animation
-                        initial="hidden" // Should be handled by parent stagger if containerVariants are used
-                        animate="visible" // Same as above
-                        custom={index} // For stagger based on index
+                        variants={itemVariants} 
+                        initial="hidden" 
+                        animate="visible" 
+                        custom={index} 
                         className="border-b border-border/20 dark:border-slate-700/50 hover:bg-muted/50 dark:hover:bg-slate-800/40 transition-colors"
                       >
                         <TableCell className="font-medium px-4 py-3 text-foreground dark:text-slate-200">{task.task_title}</TableCell>

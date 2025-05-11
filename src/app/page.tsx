@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -35,7 +34,7 @@ export default function Home() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSmartSuggestionsVisible, setIsSmartSuggestionsVisible] = useState(false);
-  const [isSuggestingTasksLoading, setIsSuggestingTasksLoading] = useState(false); // This state might be managed by AppHeader now or passed to it.
+  const [isSuggestingTasksLoading, setIsSuggestingTasksLoading] = useState(false); 
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
@@ -63,10 +62,13 @@ export default function Home() {
       }));
       setTasks(fetchedTasks.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()));
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || 'Could not load tasks. Please ensure the backend is running.';
+      let description = error.response?.data?.detail || error.message || 'Could not load tasks.';
+      if (error.message === 'Network Error') {
+        description = 'Network Error: Please ensure the backend server is running and accessible.';
+      }
       toast({ 
         title: 'Error Loading Tasks', 
-        description: errorMessage, 
+        description: description, 
         variant: 'destructive',
         icon: <AlertTriangle className="h-5 w-5" />
       });
@@ -127,9 +129,6 @@ export default function Home() {
   };
 
   const handleFormSubmit = async (data: TaskFormData) => {
-    let response;
-    let successMessage = '';
-
     try {
       const taskPayload = {
         ...data,
@@ -138,11 +137,12 @@ export default function Home() {
         created_by: editingTask ? editingTask.created_by : "User", 
       };
 
+      let successMessage = '';
       if (editingTask) {
-        response = await axiosInstance.put(`/tasks/${editingTask.id}`, taskPayload);
+        await axiosInstance.put(`/tasks/${editingTask.id}`, taskPayload);
         successMessage = `"${data.task_title}" has been updated.`;
       } else {
-        response = await axiosInstance.post('/tasks', taskPayload);
+        await axiosInstance.post('/tasks', taskPayload);
         successMessage = `"${data.task_title}" has been added.`;
       }
       
@@ -154,10 +154,13 @@ export default function Home() {
       fetchTasks(); 
       handleCloseForm();
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || 'Could not save the task. Please ensure the backend is running and reachable.';
+      let description = error.response?.data?.detail || error.message || 'Could not save the task.';
+      if (error.message === 'Network Error') {
+        description = 'Network Error: Please ensure the backend server is running and accessible before saving.';
+      }
       toast({ 
-        title: 'Error', 
-        description: errorMessage, 
+        title: 'Error Saving Task', 
+        description: description, 
         variant: 'destructive',
         icon: <AlertTriangle className="h-5 w-5" />
       });
@@ -175,16 +178,18 @@ export default function Home() {
         await axiosInstance.delete(`/tasks/${taskToDelete}`);
         toast({ 
           title: 'Task Deleted', 
-          description: `Task "${task?.task_title}" has been deleted.`, 
-          variant: 'destructive',
-          icon: <AlertTriangle className="h-5 w-5" />
+          description: `Task "${task?.task_title}" has been removed.`, 
+          icon: <CircleCheck className="h-5 w-5 text-primary" /> 
         });
         fetchTasks(); 
       } catch (error: any) {
-        const errorMessage = error.response?.data?.detail || error.message || 'Could not delete the task.';
+        let description = error.response?.data?.detail || error.message || 'Could not delete the task.';
+        if (error.message === 'Network Error') {
+          description = 'Network Error: Please ensure the backend server is running and accessible before deleting.';
+        }
         toast({ 
-          title: 'Error', 
-          description: errorMessage, 
+          title: 'Error Deleting Task', 
+          description: description, 
           variant: 'destructive',
           icon: <AlertTriangle className="h-5 w-5" />
         });
@@ -215,10 +220,13 @@ export default function Home() {
         });
         fetchTasks(); 
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || error.message || 'Could not add suggested task.';
+      let description = error.response?.data?.detail || error.message || 'Could not add suggested task.';
+      if (error.message === 'Network Error') {
+        description = 'Network Error: Please ensure the backend server is running and accessible.';
+      }
       toast({ 
-        title: 'Error', 
-        description: errorMessage, 
+        title: 'Error Adding Suggested Task', 
+        description: description, 
         variant: 'destructive',
         icon: <AlertTriangle className="h-5 w-5" />
       });
@@ -240,7 +248,7 @@ export default function Home() {
       <AppHeader 
         onAddTask={handleOpenForm} 
         onSuggestTasks={toggleSmartSuggestions}
-        isSuggestingTasks={isSuggestingTasksLoading} // This state is for the "Smart Suggestions" button in AppHeader
+        isSuggestingTasks={isSuggestingTasksLoading}
       />
       <main ref={mainContainerRef} className="flex-grow container mx-auto px-4 md:px-8 py-8">
         <motion.div
