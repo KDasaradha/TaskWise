@@ -19,10 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import axiosInstance from '@/lib/axios'; // Import axios instance
-
-// API_BASE_URL is now part of axiosInstance, so not directly needed here.
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+import axiosInstance from '@/lib/axios'; 
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -49,8 +46,8 @@ export default function Home() {
       }));
       setTasks(fetchedTasks.sort((a, b) => new Date(b.created_on).getTime() - new Date(a.created_on).getTime()));
     } catch (error: any) {
-      console.error("Failed to fetch tasks:", error);
-      const errorMessage = error.response?.data?.detail || error.message || 'Could not load tasks from the server. Please try again later.';
+      // Axios interceptor will log detailed error
+      const errorMessage = error.response?.data?.detail || error.message || 'Could not load tasks. Please ensure the backend is running.';
       toast({ title: 'Error Loading Tasks', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsLoadingTasks(false);
@@ -72,29 +69,41 @@ export default function Home() {
   };
 
   const handleFormSubmit = async (data: TaskFormData) => {
-    // const currentUser = 'User'; // Mock user, ideally from auth
-    const taskPayload = {
-      ...data,
-      task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
-    };
+    let response;
+    let successMessage = '';
 
     try {
-      let successMessage = '';
-
       if (editingTask) {
-        await axiosInstance.put(`/tasks/${editingTask.id}`, taskPayload);
+        // For PUT, construct payload based on TaskUpdate model expectations (optional fields)
+        // TaskFormData from Zod has defaults, so all fields will be present.
+        // Backend's TaskUpdate uses exclude_unset=True, so this is fine.
+        const updatePayload = {
+          ...data, // Contains all fields from TaskFormData
+          task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
+          last_updated_by: "User", // Example: should ideally be dynamic
+        };
+        response = await axiosInstance.put(`/tasks/${editingTask.id}`, updatePayload);
         successMessage = `"${data.task_title}" has been updated.`;
       } else {
-        await axiosInstance.post('/tasks', taskPayload);
+        // For POST, construct payload explicitly matching TaskCreate model (or TaskBase fields)
+        const createPayload = {
+          task_title: data.task_title,
+          task_description: data.task_description, // Zod default ensures this is a string
+          task_due_date: data.task_due_date ? data.task_due_date.toISOString() : null,
+          task_status: data.task_status,
+          task_remarks: data.task_remarks, // Zod default ensures this is a string
+          created_by: "User", // Example: backend TaskCreate also has a default
+        };
+        response = await axiosInstance.post('/tasks', createPayload);
         successMessage = `"${data.task_title}" has been added.`;
       }
       
       toast({ title: editingTask ? 'Task Updated' : 'Task Added', description: successMessage });
-      fetchTasks(); // Re-fetch tasks to update the list
+      fetchTasks(); 
       handleCloseForm();
     } catch (error: any) {
-      console.error('Failed to submit task:', error);
-      const errorMessage = error.response?.data?.detail || error.message || 'Could not save the task.';
+      // Axios interceptor will log detailed error
+      const errorMessage = error.response?.data?.detail || error.message || 'Could not save the task. Please ensure the backend is running and reachable.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
   };
@@ -109,9 +118,9 @@ export default function Home() {
       try {
         await axiosInstance.delete(`/tasks/${taskToDelete}`);
         toast({ title: 'Task Deleted', description: `Task "${task?.task_title}" has been deleted.`, variant: 'destructive' });
-        fetchTasks(); // Re-fetch tasks
+        fetchTasks(); 
       } catch (error: any) {
-        console.error('Failed to delete task:', error);
+        // Axios interceptor will log detailed error
         const errorMessage = error.response?.data?.detail || error.message || 'Could not delete the task.';
         toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
       } finally {
@@ -123,22 +132,21 @@ export default function Home() {
   const handleAddSuggestedTask = async (taskData: { title: string; description: string }) => {
     const currentUser = 'AI Assistant'; 
     
-    const newTaskPayload: TaskFormData & { created_by?: string, last_updated_by?: string } = {
+    const newTaskPayload = {
       task_title: taskData.title,
       task_description: taskData.description,
-      task_due_date: null,
+      task_due_date: null, // Suggested tasks might not have a due date initially
       task_status: TaskStatus.Pending,
       task_remarks: 'AI Suggested',
-      created_by: currentUser, // Pass if backend expects
-      // last_updated_by will be set by backend on creation
+      created_by: currentUser,
     };
 
     try {
         await axiosInstance.post('/tasks', newTaskPayload);
         toast({ title: 'Suggested Task Added', description: `"${newTaskPayload.task_title}" has been added.` });
-        fetchTasks(); // Re-fetch tasks
+        fetchTasks(); 
     } catch (error: any) {
-      console.error('Failed to add suggested task:', error);
+      // Axios interceptor will log detailed error
       const errorMessage = error.response?.data?.detail || error.message || 'Could not add suggested task.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
@@ -222,4 +230,3 @@ export default function Home() {
       </footer>
     </div>
   );
-}
